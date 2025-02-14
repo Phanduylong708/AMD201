@@ -37,14 +37,6 @@ ride-sharing/
    pip install -r requirements.txt
    ```
 
-3. Set up PostgreSQL database and update environment variables
-
-4. Run services (each in a separate terminal):
-   ```bash
-   # Run from the service directory
-   uvicorn main:app --reload --port <PORT>
-   ```
-
 ## Development Team
 
 - [Team Member 1]

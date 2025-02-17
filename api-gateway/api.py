@@ -8,8 +8,10 @@ from src.data.init import create_tables
 from fastapi.middleware.cors import CORSMiddleware
 
 service = {
-    "creature": "http://localhost:8001",
-    "explorer": "http://localhost:8002",
+    "user": "http://localhost:8001",
+    "rider": "http://localhost:8002",
+    "booking": "http://localhost:8003",
+    "ride-matching": "http://localhost:8004"
 }
 
 origins = ["*"]

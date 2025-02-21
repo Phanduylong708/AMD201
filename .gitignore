@@ -22,8 +22,6 @@ wheels/
 
 # Virtual Environment
 venv/
-env/
-.env
 .venv
 ENV/
 env.bak/
@@ -44,13 +42,6 @@ venv.bak/
 *.log
 logs/
 log/
-
-# Local development settings
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-*.env
 
 # Database
 *.sqlite3
@@ -82,3 +73,6 @@ __pycache__/
 *.pyd
 .Python
 *.so 
+
+# Linh tinh
+excluded/

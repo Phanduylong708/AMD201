@@ -33,16 +33,10 @@ ride-sharing/
    - Tải phiên bản phù hợp với máy của bạn (Windows/Mac/Linux)
    - Chạy file cài đặt, click Next và để các tùy chọn mặc định
 
-2. **Cài đặt Visual Studio Code**:
-   - Truy cập [https://code.visualstudio.com/](https://code.visualstudio.com/)
-   - Tải VS Code phiên bản phù hợp với máy của bạn
-   - Cài đặt và khởi động VS Code
-
-3. **Cài đặt Python**:
-   - Truy cập [https://www.python.org/downloads/](https://www.python.org/downloads/)
-   - Tải Python phiên bản mới nhất (chọn Windows installer 64-bit)
-   - Khi cài đặt, **nhớ tích vào ô "Add Python to PATH"**
-   - Click Install Now
+2. **Kiểm tra Git**:
+   ```bash
+   git --version
+   ```
 
 ### Bước 2: Cấu hình Git (chỉ làm 1 lần đầu)
 
@@ -95,26 +89,9 @@ ride-sharing/
    pip install -r requirements.txt
    ```
 
-### Bước 5: Kiểm tra cài đặt
+### Cách sài
 
-1. **Kiểm tra Git**:
-   ```bash
-   git --version
-   ```
-
-2. **Kiểm tra Python**:
-   ```bash
-   python --version
-   ```
-
-3. **Kiểm tra pip**:
-   ```bash
-   pip list
-   ```
-
-### Quy trình làm việc hàng ngày
-
-1. **Bắt đầu ngày làm việc**:
+1. **Lấy code mới nhất**:
    - Terminal:
      ```bash
      # Luôn cập nhật code mới nhất trước khi bắt đầu
@@ -188,36 +165,13 @@ ride-sharing/
      3. Click dấu ✓ để commit
      4. Click "Sync Changes" để push
 
-### Các thao tác Git khác trong VS Code
-
-1. **Xem lịch sử commit**:
-   - Click vào dấu ⋯ → "View History"
-   - Hoặc cài extension "Git History" để xem trực quan hơn
-
-2. **Hoàn tác thay đổi**:
-   - Click phải vào file → "Discard Changes"
-   - Hoặc click vào dấu ↺ bên cạnh file
-
-3. **So sánh thay đổi**:
-   - Click phải vào file → "Compare with Saved"
-   - Hoặc click đúp vào file trong Source Control
-
-### Lưu ý quan trọng khi làm việc
-
-- LUÔN pull code mới nhất trước khi bắt đầu làm việc
-- LUÔN pull lại trước khi push để tránh conflict
-- Thêm tên bạn vào commit message để dễ theo dõi
-- Commit thường xuyên và với message rõ ràng
-- Nếu không chắc chắn về thay đổi nào, hãy thảo luận với team
-- Thông báo cho team khi bạn đang thay đổi một file quan trọng
-- Backup code locally trước khi thực hiện các thay đổi lớn
+3. **.gitignore**:
+   - File này chứa các file và thư mục mà Git sẽ không theo dõi
+   - Các file này sẽ không được commit lên
+   - Để thêm file vào .gitignore, chỉ cần thêm tên file (vd: howtorun.md, docs/)
 
 ## Development Team
 
 - [Team Member 1]
 - [Team Member 2]
 - [Team Member 3]
-
-## Documentation
-
-Detailed documentation including API specifications and architecture diagrams can be found in the `/docs` directory. 

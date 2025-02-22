@@ -44,4 +44,4 @@ async def gateway(request: Request, services: str, parameter: Optional[str] = ""
 
 if __name__ == "__main__":
     create_tables()
-    uvicorn.run("api:app", reload=True, host="0.0.0.0", port=8003)
+    uvicorn.run("api:app", reload=True, host="0.0.0.0", port=8005)

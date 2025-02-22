@@ -7,10 +7,10 @@ from sqlalchemy.orm import sessionmaker
 #curs = conn.cursor()
 
 user = "postgres"
-password = "?"
+password = "123"
 host = "localhost"
 port = "5432"
-database = "postgres"
+database = "rideshare"
 connection_str = f'postgresql://{user}:{password}@{host}:{port}/{database}'
 engine = create_engine(connection_str)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

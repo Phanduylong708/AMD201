@@ -28,10 +28,11 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
+# Include your actual routers here
 app.include_router(rider.router, tags=["Rider"])
+app.include_router(rider.auth_router, tags=["Auth"])
 
 if __name__ == "__main__":
     import uvicorn
     print("🚀 Starting Rider Service...")
-    print("📚 Swagger UI will be available at: http://localhost:8002/docs")
     uvicorn.run("main:app", host="0.0.0.0", port=8002, reload=True, reload_dirs=["src"])

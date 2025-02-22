@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 import os
-from error import RiderError
+from src.error import RiderError
 from src.service import rider as rider_service
 
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key")

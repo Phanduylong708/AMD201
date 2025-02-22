@@ -22,7 +22,7 @@ class RiderCreate(RiderBase):
 class RiderUpdate(BaseModel):
     phone_number: Optional[str] = None
     vehicle_type: Optional[str] = None
-    license_plate: Optional[str] = None
+        
     rating: Optional[float] = Field(None, ge=0, le=5)
     is_available: Optional[bool] = None
 

@@ -3,6 +3,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 import os
 from error import RiderError
+from src.service import rider as rider_service
 
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key")
 ALGORITHM = "HS256"
@@ -22,7 +23,7 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-async def get_current_user(token: str) -> str:
+async def get_current_rider(token: str) -> str:
     if not token:
         raise RiderError.INVALID_TOKEN
     token = token.strip()

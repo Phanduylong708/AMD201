@@ -4,7 +4,7 @@ from sqlalchemy.ext.declarative import declarative_base
 
 # Define connection parameters similar to explorer's simplicity
 user = "postgres"
-password = "1"
+password = "123"
 host = "localhost"
 port = "5432"
 database = "rideshare"  # using 'rideshare' as the database name for User Service

@@ -2,6 +2,10 @@ from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
 class RiderBase(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     email: str

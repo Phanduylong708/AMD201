@@ -1,44 +1,48 @@
 from pydantic import BaseModel, Field
-from typing import Optional
-from datetime import datetime
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
+from typing import Optional, Literal
 
 class RiderBase(BaseModel):
-    username: str = Field(..., min_length=3, max_length=50)
+    username: str
     email: str
-    phone_number: str
-    full_name: str
+    full_name: str = Field(..., pattern=r'^[A-Za-z ]+$')  #Only allows letters and spaces
     vehicle_type: str
     license_plate: str
-    rating: Optional[float] = Field(default=5.0, ge=0, le=5)
-    is_available: bool = True
+    password: str
 
+#Create information 
 class RiderCreate(RiderBase):
-    password: str = Field(..., min_length=8)
+    username: str
+    email: str
+    phone_number: str = Field(..., pattern=r'^\d{10}$')  #10-digit validation
+    full_name: str
+    vehicle_type: Literal["motorbike", "car"]  #two option for vehicle type
+    license_plate: str
+    password: str  # Required for creation
+    driving_licence: str = Field(..., pattern=r'^\d{12}$')  #Must be exactly 12 digits
 
+class RiderResponse(BaseModel):
+    id: int
+    username: str
+    email: str
+    phone_number: str  #Stays as a string (prevents losing leading zeros)
+    full_name: str = Field(..., pattern=r'^[A-Za-z ]+$')  #Only allows letters and spaces
+    vehicle_type: str
+    license_plate: str
+    rating: Optional[float] = None
+    is_available: bool
+    in_riding: bool  # System-controlled
+
+    class Config:
+        orm_mode = True
+
+#Update information 
 class RiderUpdate(BaseModel):
-    phone_number: Optional[str] = None
-    vehicle_type: Optional[str] = None
-        
-    rating: Optional[float] = Field(None, ge=0, le=5)
-    is_available: Optional[bool] = None
+    email: str
+    password: str
+    phone_number: str = Field(..., pattern=r'^\d{10}$')  #make sure valid
+    vehicle_type: Optional[Literal["motorbike", "car"]] = None
+    license_plate: Optional[str] = None
 
-class RiderInDB(RiderBase):
-    id: int
-    hashed_password: str
-    created_at: datetime
-    updated_at: datetime
 
-    class Config:
-        orm_mode = True
-
-class RiderResponse(RiderBase):
-    id: int
-    created_at: datetime
-    updated_at: datetime
-
-    class Config:
-        orm_mode = True
+class RiderUpdateAvailability(BaseModel):
+    is_available: Optional[bool] = None  #Riders update availability 

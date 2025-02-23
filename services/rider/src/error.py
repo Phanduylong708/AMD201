@@ -26,13 +26,27 @@ class RiderError:
         detail="This vehicle is already registered with another rider."
     )
 
-    INVALID_TOKEN = HTTPException(
+    INVALID_CREDENTIALS = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
+        detail="Invalid username or password."
     )
 
     PERMISSION_DENIED = HTTPException(
         status_code=status.HTTP_403_FORBIDDEN,
-        detail="You don't have permission to perform this action"
+        detail="You don't have permission to perform this action."
+    )
+
+    DATABASE_ERROR = HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail="A database error occurred. Please try again later."
+    )
+
+    UNEXPECTED_ERROR = HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail="An unexpected error occurred. Please try again later."
+    )
+
+    DUPLICATE_ENTRY = HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Duplicate entry found. Please check your username, email, phone number, or license plate."
     )

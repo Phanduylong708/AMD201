@@ -30,7 +30,6 @@ app.add_middleware(
 
 # Include your actual routers here
 app.include_router(rider.router, tags=["Rider"])
-app.include_router(rider.auth_router, tags=["Auth"])
 
 if __name__ == "__main__":
     import uvicorn

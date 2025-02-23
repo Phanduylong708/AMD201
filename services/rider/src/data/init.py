@@ -1,6 +1,6 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
+from src.data.models import Base
 
 # Define connection parameters similar to explorer's simplicity
 user = "postgres"
@@ -12,7 +12,6 @@ SQLALCHEMY_DATABASE_URL = f'postgresql://{user}:{password}@{host}:{port}/{databa
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
 
 
 def get_db():
@@ -21,3 +20,15 @@ def get_db():
         yield db
     finally:
         db.close()
+
+#Ensure the database tables are created
+def create_tables():
+    inspector = inspect(engine)
+    if not inspector.has_table("riders"):
+        Base.metadata.create_all(bind=engine)
+        print("Tables created successfully!")
+    else:
+        print("Tables already exist!")
+
+# Create tables when the module is imported
+create_tables()

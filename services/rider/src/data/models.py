@@ -1,7 +1,14 @@
-from sqlalchemy import Column, Integer, String, Boolean, Float, DateTime, inspect
+from sqlalchemy import Column, Integer, String, Boolean, Float, DateTime
 from sqlalchemy.sql import func
-from src.data.init import Base 
-from .init import Base, engine
+from sqlalchemy.orm import Session
+from sqlalchemy.orm import declarative_base
+
+Base = declarative_base()
+
+
+#Retrieves a rider from the database using their username.
+def get_rider_by_username(db: Session, username: str):
+    return db.query(Rider).filter(Rider.username == username).first()
 
 class Rider(Base):
     __tablename__ = "riders"
@@ -20,14 +27,3 @@ class Rider(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())           
     in_riding = Column(Boolean, default=False, nullable=False)                  #Status of rider in a ride
-
-def create_tables():
-    inspector = inspect(engine)
-    if not inspector.has_table("riders"):
-        Base.metadata.create_all(bind=engine)
-        print("Tables created successfully!")
-    else:
-        print("Tables already exist!")
-
-# Create tables when the module is imported
-create_tables()

@@ -5,22 +5,23 @@ from src.data.init import get_db
 from src.service.security import get_password_hash
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from src.error import RiderError, HTTPException
+from fastapi import Depends
 
 
-def create_rider(rider: schemas.RiderCreate):
+
+
+def create_rider(rider: schemas.RiderCreate, db: Session = Depends(get_db)):
     try:
-        db: Session = next(get_db())
-
         db_rider = Rider(
             username=rider.username,
             email=rider.email,
-            phone_number=rider.phone_number,  # ✅ Added phone number
+            phone_number=rider.phone_number,  
             full_name=rider.full_name,
             vehicle_type=rider.vehicle_type,
             license_plate=rider.license_plate,
             driving_licence=rider.driving_licence,
-            rating=5.0,  #Default rating (riders cannot set their own rating)
-            is_available=True,  #Default availability (riders cannot set it)
+            rating=5.0,             
+            is_available=True,     
             hashed_password=get_password_hash(rider.password),  #Hash the password
         )
         db.add(db_rider)
@@ -44,14 +45,35 @@ def create_rider(rider: schemas.RiderCreate):
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
-
-def update_rider(rider_id: int, rider: schemas.RiderUpdate):
-    db: Session = next(get_db())
+def update_rider(rider_id: int, rider: schemas.RiderUpdate, current_user: dict, db: Session = Depends(get_db)):
+#Updates rider profile while ensuring only the logged-in rider can update their own data.
     db_rider = db.query(Rider).filter(Rider.id == rider_id).first()
     if not db_rider:
-        return None
-    for key, value in rider.dict(exclude_unset=True).items():
+        raise HTTPException(status_code=404, detail="Rider not found")
+
+
+    #Ensure riders can only update their own profile
+    if current_user["sub"] != db_rider.username:
+        raise HTTPException(status_code=403, detail="Not authorized to update this profile.")
+
+
+    #Prevent changes to `rating` & `is_available`
+    update_data = rider.dict(exclude_unset=True)
+    if "rating" in update_data:
+        del update_data["rating"]
+    if "is_available" in update_data:
+        del update_data["is_available"]
+
+    for key, value in update_data.items():
         setattr(db_rider, key, value)
-    db.commit()
-    db.refresh(db_rider)
-    return db_rider
+
+    try:
+        db.commit()
+        db.refresh(db_rider)
+        return db_rider
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Update failed due to duplicate entry.")
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")

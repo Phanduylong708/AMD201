@@ -8,6 +8,8 @@ from src.error import RiderError, HTTPException
 from fastapi import Depends
 
 
+def get_rider(db: Session, rider_id: int):
+    return db.query(Rider).filter(Rider.id == rider_id).first()
 
 
 def create_rider(rider: schemas.RiderCreate, db: Session = Depends(get_db)):
@@ -45,17 +47,16 @@ def create_rider(rider: schemas.RiderCreate, db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
+
 def update_rider(rider_id: int, rider: schemas.RiderUpdate, current_user: dict, db: Session = Depends(get_db)):
 #Updates rider profile while ensuring only the logged-in rider can update their own data.
     db_rider = db.query(Rider).filter(Rider.id == rider_id).first()
     if not db_rider:
         raise HTTPException(status_code=404, detail="Rider not found")
 
-
     #Ensure riders can only update their own profile
     if current_user["sub"] != db_rider.username:
         raise HTTPException(status_code=403, detail="Not authorized to update this profile.")
-
 
     #Prevent changes to `rating` & `is_available`
     update_data = rider.dict(exclude_unset=True)
@@ -66,7 +67,6 @@ def update_rider(rider_id: int, rider: schemas.RiderUpdate, current_user: dict, 
 
     for key, value in update_data.items():
         setattr(db_rider, key, value)
-
     try:
         db.commit()
         db.refresh(db_rider)

@@ -1,5 +1,10 @@
 from pydantic import BaseModel, Field
 from typing import Optional, Literal
+from pydantic import BaseModel
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
 
 class RiderBase(BaseModel):
     username: str
@@ -17,7 +22,7 @@ class RiderCreate(RiderBase):
     full_name: str
     vehicle_type: Literal["motorbike", "car"]  #two option for vehicle type
     license_plate: str
-    password: str  # Required for creation
+    password: str 
     driving_licence: str = Field(..., pattern=r'^\d{12}$')  #Must be exactly 12 digits
 
 class RiderResponse(BaseModel):
@@ -33,7 +38,7 @@ class RiderResponse(BaseModel):
     in_riding: bool  # System-controlled
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 #Update information 
 class RiderUpdate(BaseModel):
@@ -44,5 +49,6 @@ class RiderUpdate(BaseModel):
     license_plate: Optional[str] = None
 
 
-class RiderUpdateAvailability(BaseModel):
-    is_available: Optional[bool] = None  #Riders update availability 
+#Update availability
+class RiderAvailabilityUpdate(BaseModel):
+    is_available: bool

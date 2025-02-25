@@ -9,6 +9,8 @@ from src.data.models import get_rider_by_username
 from src.data.init import get_db
 from sqlalchemy.exc import IntegrityError
 from src.data import rider as data_rider
+from src.data.rider import get_rider  # ✅ Import get_rider
+
 
 router = APIRouter(prefix="/riders")
 
@@ -29,13 +31,19 @@ def create_rider(rider: schemas.RiderCreate, db: Session):
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
-# ✅ Rider Login Endpoint
+
+def get_rider(db: Session, rider_id: int):
+    return data_rider.get_rider(db, rider_id)
+
+
 @router.post("/login")
-def login_rider(form_data: OAuth2PasswordRequestForm = Depends()):
+def login_rider(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """
     Rider login endpoint.
     """
-    rider = get_rider_by_username(form_data.username)
+    print(f"🔍 Attempting login for {form_data.username}")  # Debugging
+
+    rider = get_rider_by_username(db, form_data.username)
     if not rider or not verify_password(form_data.password, rider.hashed_password):
         raise HTTPException(status_code=400, detail="Invalid username or password")
 
@@ -46,10 +54,12 @@ def login_rider(form_data: OAuth2PasswordRequestForm = Depends()):
         status_code=200
     )
 
+
 # ✅ Get Current Rider Info
 @router.get("/me", response_model=schemas.RiderResponse)
 def read_riders_me(current_user: dict = Depends(get_current_user)):  
     return {"message": f"Rider info for {current_user['sub']}"}
+
 
 # ✅ Update Rider Profile (Prevent Rating & Availability Changes)
 @router.put("/{rider_id}", response_model=schemas.RiderResponse)
@@ -73,6 +83,7 @@ def update_rider(rider_id: int, rider: schemas.RiderUpdate, current_user: dict =
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
+
 # ✅ Delete Rider Account
 @router.delete("/{rider_id}", status_code=204)
 def delete_rider(rider_id: int, current_user: dict = Depends(get_current_user)):  
@@ -92,15 +103,14 @@ def delete_rider(rider_id: int, current_user: dict = Depends(get_current_user)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
-# ✅ Update Rider Availability
-@router.put("/{rider_id}/availability", response_model=schemas.RiderUpdateAvailability)
-def update_availability(rider_id: int, is_available: bool, current_user: dict = Depends(get_current_user)):  
-    db_rider = rider_service.get_rider(rider_id)
+
+@router.put("/{rider_id}/availability", response_model=schemas.RiderAvailabilityUpdate)
+def update_availability(rider_id: int, is_available: bool, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):  
+    db_rider = get_rider(db, rider_id)  # ✅ Use `get_rider` correctly
     if not db_rider:
         raise HTTPException(status_code=404, detail="Rider not found")
 
-    # 🔐 Ensure only the logged-in rider can update their availability
     if current_user["sub"] != db_rider.username:
         raise HTTPException(status_code=403, detail="Not authorized to update availability.")
 
-    return rider_service.update_rider(rider_id, schemas.RiderUpdate(is_available=is_available))
+    return rider_service.update_rider(rider_id, schemas.RiderUpdate(is_available=is_available), db)  # ✅ Pass `db`

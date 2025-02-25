@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from src.data.models import Booking
 from src.model import booking as schemas
 from src.data.init import get_db
-from AMD201.services.booking.src.error import BookingError
+from services.booking.src.error import BookingError
 from src.service.rider import get_available_riders
 
 def create_booking(booking: schemas.BookingCreate):

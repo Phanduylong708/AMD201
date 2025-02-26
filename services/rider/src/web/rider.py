@@ -51,35 +51,48 @@ def get_riders(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """
     Fetch all riders with optional pagination.
     """
-    return rider_service.get_riders(skip=skip, limit=limit)
+    return rider_service.get_rider(skip=skip, limit=limit)
 
 
-# ✅ Get Current Rider Info
 @router.get("/me", response_model=schemas.RiderResponse)
-def read_riders_me(current_user: dict = Depends(get_current_user)):  
-    return {"message": f"Rider info for {current_user['sub']}"}
+def read_riders_me(
+    current_user: dict = Depends(get_current_user), 
+    db: Session = Depends(get_db)  # ✅ Add database session
+):  
+    db_rider = rider_service.get_rider_by_username(db, current_user["sub"])  # ✅ Fetch the rider
+    
+    if not db_rider:
+        raise HTTPException(status_code=404, detail="Rider not found")
+
+    return db_rider  # ✅ Return full RiderResponse model
 
 
-# ✅ Update Rider Profile (Prevent Rating & Availability Changes)
 @router.put("/{rider_id}", response_model=schemas.RiderResponse)
-def update_rider(rider_id: int, rider: schemas.RiderUpdate, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):  
+def update_rider(
+    rider_id: int, 
+    rider: schemas.RiderUpdate, 
+    current_user: dict = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):  
     try:
-        db_rider = rider_service.get_rider(rider_id)
+        db_rider = rider_service.get_rider(db, rider_id)  # ✅ Pass `db`
+        
         if not db_rider:
             raise HTTPException(status_code=404, detail="Rider not found")
 
+        # 🔐 Ensure only the logged-in rider can update their own account
         if current_user["sub"] != db_rider.username:
             raise HTTPException(status_code=403, detail="Not authorized to update this rider.")
 
         update_data = rider.dict(exclude_unset=True)
         if "is_available" in update_data:
-            del update_data["is_available"]
+            del update_data["is_available"]  # Riders cannot manually update availability
         if "rating" in update_data:
-            del update_data["rating"]
+            del update_data["rating"]  # Riders cannot manually update rating
 
-        return rider_service.update_rider(rider_id, schemas.RiderUpdate(**update_data))
+        return rider_service.update_rider(db, rider_id, schemas.RiderUpdate(**update_data))  # ✅ Pass `db`
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}") 
 
 
 # ✅ Delete Rider Account

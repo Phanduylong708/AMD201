@@ -1,30 +1,32 @@
 from sqlalchemy.orm import Session
 from src.data.models import Rider
 from src.model import rider as schemas
-from src.data.init import get_db
 from src.service.security import get_password_hash
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from src.error import RiderError, HTTPException
-from fastapi import Depends
+from src.error import HTTPException
 
 
 def get_rider(db: Session, rider_id: int):
     return db.query(Rider).filter(Rider.id == rider_id).first()
 
 
-def create_rider(rider: schemas.RiderCreate, db: Session = Depends(get_db)):
+def get_riders(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(Rider).offset(skip).limit(limit).all()
+
+
+def create_rider(rider: schemas.RiderCreate, db: Session):
     try:
         db_rider = Rider(
             username=rider.username,
             email=rider.email,
-            phone_number=rider.phone_number,  
+            phone_number=rider.phone_number,
             full_name=rider.full_name,
             vehicle_type=rider.vehicle_type,
             license_plate=rider.license_plate,
             driving_licence=rider.driving_licence,
+            hashed_password=get_password_hash(rider.password),
             rating=5.0,             
-            is_available=True,     
-            hashed_password=get_password_hash(rider.password),  #Hash the password
+            is_available=True     
         )
         db.add(db_rider)
         db.commit()
@@ -32,33 +34,22 @@ def create_rider(rider: schemas.RiderCreate, db: Session = Depends(get_db)):
         return db_rider
     except IntegrityError as e:
         db.rollback()
-        if "username" in str(e):
-            raise RiderError.USERNAME_EXISTS
-        elif "email" in str(e):
-            raise RiderError.EMAIL_EXISTS
-        elif "phone_number" in str(e):
-            raise RiderError.PHONE_EXISTS
-        elif "license_plate" in str(e):
-            raise RiderError.VEHICLE_EXISTS
-        elif "driving_licence" in str(e):
-            raise HTTPException(status_code=400, detail="This driving licence is already registered.")
-        raise RiderError.DATABASE_ERROR
+        raise HTTPException(status_code=400, detail="Duplicate entry error")
     except SQLAlchemyError as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 
-def update_rider(rider_id: int, rider: schemas.RiderUpdate, current_user: dict, db: Session = Depends(get_db)):
-#Updates rider profile while ensuring only the logged-in rider can update their own data.
+def update_rider(rider_id: int, rider: schemas.RiderUpdate, current_user: dict, db: Session):  # ✅ Fix
     db_rider = db.query(Rider).filter(Rider.id == rider_id).first()
     if not db_rider:
         raise HTTPException(status_code=404, detail="Rider not found")
 
-    #Ensure riders can only update their own profile
+    # Ensure riders can only update their own profile
     if current_user["sub"] != db_rider.username:
         raise HTTPException(status_code=403, detail="Not authorized to update this profile.")
 
-    #Prevent changes to `rating` & `is_available`
+    # Prevent changes to `rating` & `is_available`
     update_data = rider.dict(exclude_unset=True)
     if "rating" in update_data:
         del update_data["rating"]
@@ -67,6 +58,7 @@ def update_rider(rider_id: int, rider: schemas.RiderUpdate, current_user: dict, 
 
     for key, value in update_data.items():
         setattr(db_rider, key, value)
+
     try:
         db.commit()
         db.refresh(db_rider)
@@ -77,3 +69,33 @@ def update_rider(rider_id: int, rider: schemas.RiderUpdate, current_user: dict, 
     except SQLAlchemyError as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+
+def delete_rider(db: Session, rider_id: int):
+    """
+    Deletes a rider from the database.
+    Returns True if deleted, False if the rider does not exist.
+    """
+    db_rider = db.query(Rider).filter(Rider.id == rider_id).first()
+    if not db_rider:
+        return False  # Rider not found
+
+    db.delete(db_rider)
+    db.commit()
+    return True  # Successfully deleted
+
+
+
+def update_availability(db: Session, rider_id: int, is_available: bool):
+    """
+    Updates only the availability status of a rider.
+    Returns the updated rider object if successful, or None if the rider does not exist.
+    """
+    db_rider = db.query(Rider).filter(Rider.id == rider_id).first()
+    if not db_rider:
+        return None  # Rider not found
+
+    db_rider.is_available = is_available  # ✅ Update only availability
+    db.commit()
+    db.refresh(db_rider)  # ✅ Refresh to get updated values
+    return db_rider  # ✅ Return updated rider

@@ -1,12 +1,11 @@
 from sqlalchemy import Column, Integer, String, Boolean, Float, DateTime
 from sqlalchemy.sql import func
-from sqlalchemy.orm import Session
 from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm.session import Session
+
 
 Base = declarative_base()
 
-
-#Retrieves a rider from the database using their username.
 def get_rider_by_username(db: Session, username: str):
     return db.query(Rider).filter(Rider.username == username).first()
 

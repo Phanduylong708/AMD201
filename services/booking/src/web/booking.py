@@ -2,7 +2,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import APIKeyHeader
 from typing import List
-
 from src.service import booking as booking_service
 from src.model import booking as schemas
 from src.service.security import get_current_booking
@@ -10,7 +9,7 @@ from src.error import BookingError
 from src.service.booking import calculate_fare
 
 # Router for CRUD endpoints with prefix "/bookings"
-router = APIRouter(prefix="/bookings")
+router = APIRouter(prefix="/booking")
 
 api_key_header = APIKeyHeader(name="Authorization", auto_error=False, scheme_name="Bearer")
 

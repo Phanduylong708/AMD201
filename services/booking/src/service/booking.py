@@ -1,32 +1,9 @@
-from pydantic import BaseModel, Field
-from typing import Optional
-from datetime import datetime
+from sqlalchemy.orm import Session 
+from fastapi import APIRouter
+from src.model import rider as schemas
+from src.data import rider as data_rider
 
-class BookingBase(BaseModel):
-    user_id: int
-    rider_id: int
-    status: str = Field(..., regex="^(Pending|In Progress|Completed|Canceled)$")
-    distance_km: float = Field(..., gt=0)
-    fare: float = Field(..., gt=0)
-
-class BookingCreate(BookingBase):
-    pass
-
-class BookingUpdate(BaseModel):
-    status: str = Field(..., regex="^(Pending|In Progress|Completed|Canceled)$")
-
-class BookingInDB(BookingBase):
-    id: int
-    created_at: datetime
-    updated_at: Optional[datetime]
-    
-    class Config:
-        orm_mode = True
-
-class BookingResponse(BookingBase):
-    id: int
-    created_at: datetime
-    updated_at: Optional[datetime]
+router = APIRouter(prefix="/booking")
 
 def calculate_fare(distance_km: float) -> int:
     """Tính giá cước dựa trên khoảng cách"""

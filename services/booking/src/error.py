@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 from fastapi import HTTPException, status
 
 class BookingError:
@@ -26,12 +25,4 @@ class BookingError:
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Unauthorized access to this booking."
     )
-=======
-class Missing(Exception):
-    def __init__(self, msg:str):
-        self.msg = msg
 
-class Duplicate(Exception):
-    def __init__(self, msg:str):
-        self.msg = msg
->>>>>>> 1be5fee6da39d2c0918f60eb2ec9363da84caba5

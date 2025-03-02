@@ -29,7 +29,7 @@ app.add_middleware(
 )
 
 # Include your actual routers here
-app.include_router(booking.router, tags=["Booking"])
+app.include_router(booking.router, tags=["booking"])
 
 if __name__ == "__main__":
     import uvicorn

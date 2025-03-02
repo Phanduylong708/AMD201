@@ -4,6 +4,8 @@ from src.model import booking as schemas
 from src.data.init import get_db
 from services.booking.src.error import BookingError
 from src.service.rider import get_available_riders
+from src.service.user import get_available_riders
+
 
 def create_booking(booking: schemas.BookingCreate):
     db: Session = next(get_db())

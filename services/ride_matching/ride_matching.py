@@ -6,7 +6,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 origins = [
     "http://localhost:8004"
-    #"*", //allow all
 ]
 
 app = FastAPI()

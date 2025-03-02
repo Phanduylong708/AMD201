@@ -5,6 +5,7 @@ import httpx
 import uvicorn
 from src.model.schemas import LoginRequest
 from fastapi.middleware.cors import CORSMiddleware
+#from src.web.auth import router as api_router
 
 
 # Define services

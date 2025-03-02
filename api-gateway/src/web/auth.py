@@ -5,6 +5,7 @@ from src.service.security import create_access_token, authenticate_rider, authen
 
 router = APIRouter()
 
+
 @router.post("/users/login")
 def login_user(form_data: OAuth2PasswordRequestForm = Depends()):
     user = authenticate_user(form_data.username, form_data.password)

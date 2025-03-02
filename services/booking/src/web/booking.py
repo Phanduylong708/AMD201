@@ -1,50 +1,34 @@
-
-from fastapi import APIRouter, HTTPException, Depends
-from fastapi.security import APIKeyHeader
-from typing import List
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 from src.service import booking as booking_service
 from src.model import booking as schemas
-from src.service.security import get_current_booking
-from src.error import BookingError
-from src.service.booking import calculate_fare
+from src.data.init import get_db
 
-# Router for CRUD endpoints with prefix "/bookings"
-router = APIRouter(prefix="/booking")
+router = APIRouter(prefix="/booking", tags=["booking"])
 
-api_key_header = APIKeyHeader(name="Authorization", auto_error=False, scheme_name="Bearer")
-
-async def get_current_booking_multi(authorization: str = Depends(api_key_header)) -> str:
-    if not authorization:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    token = authorization.strip()
-    if not token.lower().startswith("bearer "):
-        token = f"Bearer {token}"
-    return await get_current_booking(token)
-
-@router.post("/", response_model=schemas.BookingResponse, status_code=201)
-def create_booking(booking: schemas.BookingCreate):
-    return booking_service.create_booking(booking)
+@router.post("/", response_model=schemas.BookingResponse)
+def create_booking(booking_data: schemas.BookingCreate, db: Session = Depends(get_db)):
+    """API endpoint to create a booking."""
+    booking = booking_service.create_booking(db, booking_data)
+    return booking
 
 @router.get("/{booking_id}", response_model=schemas.BookingResponse)
-def get_booking(booking_id: int):
-    return booking_service.get_booking(booking_id)
+def get_booking_by_id(booking_id: int, db: Session = Depends(get_db)):
+    """API endpoint to retrieve a booking by ID."""
+    booking = booking_service.get_booking_by_id(db, booking_id)
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    return booking
 
-@router.put("/{booking_id}/status", response_model=schemas.BookingResponse)
-def update_booking_status(booking_id: int, status: schemas.BookingUpdate):
-    return booking_service.update_booking_status(booking_id, status.status)
+@router.patch("/{booking_id}/status", response_model=schemas.BookingResponse)
+def update_booking_status(booking_id: int, update_data: schemas.BookingUpdateStatus, db: Session = Depends(get_db)):
+    """API endpoint to update booking status."""
+    updated_booking = booking_service.update_booking_status(db, booking_id, update_data.status)
+    if not updated_booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    return updated_booking
 
-
-#tự động gán tài xế và tính giá cước:
-@router.post("/", response_model=schemas.BookingResponse)
-def create_booking(booking: schemas.BookingCreate):
-    booking.fare = calculate_fare(booking.distance)
-    nearest_rider = find_nearest_rider(booking.pickup_location)
-    if not nearest_rider:
-        raise HTTPException(status_code=400, detail="No available riders")
-    booking.rider_id = nearest_rider.id
-    return booking_service.create_booking(booking)
-
-#cập nhập trạng thái di chuyển
-@router.put("/{booking_id}/status", response_model=schemas.BookingResponse)
-def update_status(booking_id: int, status: str):
-    return booking_service.update_booking_status(booking_id, status)
+@router.get("/", response_model=list[schemas.BookingResponse])
+def list_bookings(db: Session = Depends(get_db)):
+    """API endpoint to list all bookings."""
+    return booking_service.list_bookings(db)

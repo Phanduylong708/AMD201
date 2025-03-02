@@ -2,17 +2,22 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from pathlib import Path
+import os
 from src.web import booking
 from src.data import models, init
 
 # Load environment variables
-env_path = Path(__file__).resolve().parent.parent.parent / '.env'
-load_dotenv(dotenv_path=env_path)
+env_path = Path(__file__).resolve().parent.parent.parent / ".env"
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path)
+else:
+    print("Warning: .env file not found, using default environment variables.")
 
-# Create database tables
+#Use Alembic for better control)
 models.Base.metadata.create_all(bind=init.engine)
 
-origins = ("http://localhost:8003",)
+# CORS Configuration
+origins = os.getenv("CORS_ORIGINS", "http://localhost:8003").split(",")
 
 app = FastAPI(
     title="Booking Service",
@@ -28,10 +33,10 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-# Include your actual routers here
+# Register Routers
 app.include_router(booking.router, tags=["booking"])
 
 if __name__ == "__main__":
     import uvicorn
     print("🚀 Starting Booking Service...")
-    uvicorn.run("main:app", host="0.0.0.0", port=8004, reload=True, reload_dirs=["src"])
+    uvicorn.run("main:app", host="0.0.0.0", port=int(os.getenv("BOOKING_PORT", 8004)), reload=True)

@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from jose import jwt
 import os
 from src.data.rider import get_rider_by_username 
+from src.data.user import get_user_by_username
 from fastapi import HTTPException, Depends
 from src.data.init import get_db
 from sqlalchemy.orm import Session
@@ -28,6 +29,23 @@ def create_access_token(data: dict, expires_delta: timedelta = None):
     expire = datetime.utcnow() + (expires_delta if expires_delta else timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def authenticate_user(username: str, password: str, db: Session = Depends(get_db)):
+    print(f"Authenticating user: {username}")  # 🔍 Debugging
+    user = get_user_by_username(db, username)
+    
+    if not user:
+        print("User not found!")
+        raise HTTPException(status_code=400, detail="Invalid username or password")
+
+    if not verify_password(password, user.hashed_password):
+        print("Incorrect password!")
+        raise HTTPException(status_code=400, detail="Invalid username or password")
+
+    print("✅ User authentication successful!")
+    return user
+
 
 def authenticate_rider(username: str, password: str, db: Session = Depends(get_db)):
     print(f"Authenticating rider: {username}")  # 🔍 Debugging

@@ -1,24 +1,17 @@
-from pydantic import BaseModel
-from typing import Optional
-from datetime import datetime
+from sqlalchemy import Column, Integer, String, Float, DateTime
+from sqlalchemy.orm import declarative_base
+import datetime
 
-class BookingBase(BaseModel):
-    user_id: int
-    rider_id: int
-    status: str
-    distance_km: float
-    fare: float
+Base = declarative_base()
 
-class BookingCreate(BookingBase):
-    pass
+class Booking(Base):
+    __tablename__ = "bookings"
 
-class BookingUpdateStatus(BaseModel):
-    status: str
-
-class BookingResponse(BookingBase):
-    id: int
-    created_at: datetime
-    updated_at: Optional[datetime]
-
-    class Config:
-        from_attributes = True
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, nullable=False)
+    rider_id = Column(Integer, nullable=False)
+    status = Column(String, nullable=False, default="Pending")
+    distance_km = Column(Float, nullable=False)
+    fare = Column(Float, nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, onupdate=datetime.datetime.utcnow, nullable=True)

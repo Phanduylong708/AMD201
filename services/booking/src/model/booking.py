@@ -28,7 +28,7 @@ class BookingResponse(BookingBase):
 class BookingCreate(BaseModel):
     user_id: int
     rider_id: Optional[int] = None  # Ban đầu chưa có tài xế
-    distance: float
+    distance_km: float
     fare: int = 0
     status: str = "Pending"  # Mặc định là Pending
 

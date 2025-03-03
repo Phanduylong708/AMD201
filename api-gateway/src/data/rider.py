@@ -17,9 +17,3 @@ def get_rider_by_username(db: Session, username: str):
     
     return rider
 
-
-def create_rider(rider: Rider, db: Session):
-    db.add(rider)
-    db.commit()
-    db.refresh(rider)
-    return rider

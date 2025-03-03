@@ -29,3 +29,6 @@ def delete_rider(db: Session, rider_id: int):
 def update_availability(db: Session, rider_id: int, is_available: bool):
     return data_rider.update_availability(db, rider_id, is_available)
 
+def get_available_riders(db: Session):
+    """Retrieve all available riders who are not in a ride."""
+    return db.query(data_rider).filter(data_rider.is_available == True, data_rider.in_riding == False).all()

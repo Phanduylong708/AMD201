@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from src.service import rider as rider_service
 from src.data.init import get_db
-from src.data.models import get_rider_by_username
+from src.data.models import get_rider_by_username, get_available_riders
 from src.service.security import get_current_user, create_access_token, verify_password
 from src.model import rider as schemas
 from fastapi.responses import JSONResponse
@@ -71,6 +71,12 @@ def update_rider(
     return rider_service.update_rider(rider_id, rider, current_user, db)
 
 
+@router.get("/available-riders", response_model=list[schemas.RiderResponse])
+def list_available_riders(db: Session = Depends(get_db)):
+    """Returns all available riders."""
+    return get_available_riders(db)
+
+
 # ✅ Update Rider Availability
 @router.put("/{rider_id}/availability", response_model=schemas.RiderAvailabilityUpdate)
 def update_availability(
@@ -106,5 +112,4 @@ def delete_rider(
     success = rider_service.delete_rider(db, rider_id)
     if not success:
         raise HTTPException(status_code=404, detail="Rider not found")
-    
     return None

@@ -9,6 +9,12 @@ Base = declarative_base()
 def get_rider_by_username(db: Session, username: str):
     return db.query(Rider).filter(Rider.username == username).first()
 
+
+def get_available_riders(db: Session):
+    """Retrieve all available riders who are not in a ride."""
+    return db.query(Rider).filter(Rider.is_available == True, Rider.in_riding == False).all()
+
+
 class Rider(Base):
     __tablename__ = "riders"
 

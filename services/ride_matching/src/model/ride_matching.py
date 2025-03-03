@@ -1,11 +1,16 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing import Optional
 
-class RideRequest(BaseModel):
-    user_id: int
-    latitude: float
-    longitude: float
+class RideMatchRequest(BaseModel):
+    """Request schema for finding a nearest rider"""
+    user_id: int = Field(..., gt=0, description="ID of the user requesting a ride")
 
-class RideResponse(BaseModel):
-    user_id: int
+class RideMatchResponse(BaseModel):
+    """Response schema when a rider is assigned"""
     rider_id: int
-    distance: float
+    distance_km: float
+
+class RiderUpdateStatus(BaseModel):
+    """Schema to update rider availability and ride status"""
+    is_available: bool
+    in_riding: bool

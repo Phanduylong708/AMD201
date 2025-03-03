@@ -99,3 +99,4 @@ def update_availability(db: Session, rider_id: int, is_available: bool):
     db.commit()
     db.refresh(db_rider)  # ✅ Refresh to get updated values
     return db_rider  # ✅ Return updated rider
+

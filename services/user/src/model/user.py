@@ -11,14 +11,14 @@ class UserBase(BaseModel):
     full_name: str = Field(..., min_length=1, max_length=100)
 
 class UserCreate(UserBase):
-    password: str = Field(...)
+    password: str
 
     @validator('password')
     def validate_password(cls, v):
         if len(v) < 8:
-            raise UserError.INVALID_PASSWORD
+            raise ValueError("Password must be at least 8 characters long and contain at least one letter and one number")
         if not re.search(r"[A-Za-z]", v) or not re.search(r"\d", v):
-            raise UserError.INVALID_PASSWORD
+            raise ValueError("Password must be at least 8 characters long and contain at least one letter and one number")
         return v
 
 class UserUpdate(BaseModel):

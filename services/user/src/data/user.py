@@ -4,6 +4,7 @@ from src.model import user as schemas
 from src.service.security import get_password_hash, verify_password
 from src.error import UserError
 import re
+from datetime import datetime
 
 def get_user(user_id):
     db = next(get_db())
@@ -12,6 +13,10 @@ def get_user(user_id):
 def get_user_by_email(email):
     db = next(get_db())
     return db.query(models.User).filter(models.User.email == email).first()
+
+def get_user_by_phone(phone_number):
+    db = next(get_db())
+    return db.query(models.User).filter(models.User.phone_number == phone_number).first()
 
 def get_user_by_username(username):
     db = next(get_db())
@@ -41,32 +46,44 @@ def validate_password(password):
     return True
 
 def create_user(user: schemas.UserCreate):
-    db = next(get_db())
-
-    if not validate_password(user.password):
-        raise UserError.INVALID_PASSWORD
-
-    if db.query(models.User).filter(models.User.username == user.username).first():
+    # Check if username already exists
+    db_user = get_user_by_username(user.username)
+    if db_user:
         raise UserError.USERNAME_EXISTS
-
-    if db.query(models.User).filter(models.User.email == user.email).first():
+    
+    # Check if email already exists
+    db_user = get_user_by_email(user.email)
+    if db_user:
         raise UserError.EMAIL_EXISTS
-
-    if db.query(models.User).filter(models.User.phone_number == user.phone_number).first():
+    
+    # Check if phone already exists
+    db_user = get_user_by_phone(user.phone_number)
+    if db_user:
         raise UserError.PHONE_EXISTS
-
+    
+    # Create new user
     hashed_password = get_password_hash(user.password)
+    now = datetime.utcnow()
     db_user = models.User(
         username=user.username,
         email=user.email,
         phone_number=user.phone_number,
         full_name=user.full_name,
-        hashed_password=hashed_password
+        hashed_password=hashed_password,
+        created_at=now,
+        updated_at=now
     )
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-    return db_user
+    
+    db = next(get_db())
+    try:
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+        return db_user
+    except Exception as e:
+        db.rollback()
+        print(f"Error creating user: {e}")
+        raise
 
 def update_user(user_id, user: schemas.UserUpdate):
     db = next(get_db())

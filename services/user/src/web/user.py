@@ -23,7 +23,12 @@ async def get_current_user_multi(authorization: str = Depends(api_key_header)) -
 
 @router.post("/", response_model=schemas.UserResponse, status_code=201)
 def create_user(user: schemas.UserCreate):
-    return user_service.create_user(user)
+    try:
+        return user_service.create_user(user)
+    except ValueError as e:
+        if "Password must be" in str(e):
+            raise UserError.INVALID_PASSWORD
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/me", response_model=schemas.UserResponse)
 async def read_users_me(current_user: str = Depends(get_current_user_multi)):

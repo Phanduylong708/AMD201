@@ -1,6 +1,9 @@
 from sqlalchemy.orm import Session
 from src.model import booking as schemas
 from src.data import booking as models
+from src.data.init import get_db
+from fastapi import Depends
+
 
 def calculate_fare(distance_km: float) -> float:
     """Calculate fare based on a tiered pricing model."""
@@ -9,6 +12,7 @@ def calculate_fare(distance_km: float) -> float:
     elif distance_km <= 4:
         return round(distance_km * 15000, 2)
     return round(distance_km * 12000, 2)
+
 
 def create_booking(db: Session, booking_data: schemas.BookingCreate):
     """Create a new booking."""
@@ -20,9 +24,11 @@ def create_booking(db: Session, booking_data: schemas.BookingCreate):
     db.refresh(new_booking)
     return new_booking
 
+
 def get_booking_by_id(db: Session, booking_id: int):
     """Retrieve a booking by ID."""
     return db.query(models.Booking).filter(models.Booking.id == booking_id).first()
+
 
 def update_booking_status(db: Session, booking_id: int, new_status: str):
     """Update the status of a booking."""
@@ -34,6 +40,13 @@ def update_booking_status(db: Session, booking_id: int, new_status: str):
     db.refresh(booking)
     return booking
 
+
 def list_bookings(db: Session):
     """Retrieve all bookings."""
     return db.query(models.Booking).all()
+
+
+def update_booking_status(booking_id: int, update_data: schemas.BookingUpdateStatus, db: Session = Depends(get_db)):
+    """API endpoint to update booking status."""
+    updated_booking = update_booking_status(db, booking_id, update_data.status)
+    return updated_booking

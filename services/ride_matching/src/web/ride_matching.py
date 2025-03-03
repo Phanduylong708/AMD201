@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from src.service.matching import find_nearest_rider
-from src.model.schemas import RideRequest, RideResponse
+from src.service.ride_matching import find_nearest_rider
+from src.model.ride_matching import RideRequest, RideResponse
 from src.data.init import get_db
 
 router = APIRouter()

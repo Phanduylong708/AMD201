@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from src.data.models import User
+from src.data.user import User
 from fastapi import HTTPException
 
 def get_user_by_id(db: Session, user_id: int):

@@ -12,3 +12,5 @@ class Rider(Base):
     longitude = Column(Integer, nullable=False)
 
     bookings = relationship("Booking", back_populates="rider")
+
+

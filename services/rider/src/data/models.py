@@ -27,6 +27,7 @@ class Rider(Base):
     license_plate = Column(String(20), unique=True, nullable=False)
     driving_licence = Column(String(12), unique=True, nullable=False)
     rating = Column(Float, default=5.0)
+    ride_count = Column(Integer, default=0)
     is_available = Column(Boolean, default=True)                                #Status of rider availability
     hashed_password = Column(String(255), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -19,6 +19,7 @@ def map_id_to_matrix(id: int) -> int:
     mapped_id = ((id - 1) % 5) + 1
     return mapped_id
 
+
 def get_distance(user_id: int, rider_id: int) -> float:
     """Get distance between a user and rider using the base matrix."""
     mapped_user = map_id_to_matrix(user_id)

@@ -119,26 +119,35 @@ def find_nearest_rider(user_id: int) -> tuple[int, float]:
 def create_booking_with_rider(db: Session, booking_data: schemas.BookingCreate):
     """
     Create a new booking with automatic rider assignment.
-    Only requires user_id, all other fields are set automatically.
     Steps:
-    1. Find nearest rider
-    2. Calculate fare based on distance
-    3. Create booking record
-    4. Update rider status to not available and in riding
+      1. Find the nearest available rider and retrieve the distance.
+      2. Check if the selected rider already has an active booking 
+         (with status "Pending" or "In Progress").
+      3. If so, raise an HTTPException.
+      4. Otherwise, set the booking details and create the booking record.
+      5. Update the rider's status to not available and mark them as in a ride.
     """
-    # Find nearest rider and get distance
+    # 1. Find the nearest rider and get the distance
     rider_id, distance_km = find_nearest_rider(booking_data.user_id)
     
-    # Set all required fields
+    # 2. Check if this rider already has an active booking
+    existing_booking = db.query(models.Booking).filter(
+        models.Booking.rider_id == rider_id,
+        models.Booking.status.in_(["Pending", "In Progress"])
+    ).first()
+    if existing_booking:
+        raise HTTPException(status_code=400, detail="Driver already has an active booking.")
+    
+    # 3. Set all required fields for the new booking
     booking_data.rider_id = rider_id
     booking_data.distance_km = distance_km
     booking_data.status = "Pending"
     booking_data.fare = calculate_fare(distance_km)
     
-    # Create booking
+    # 4. Create the booking record in the database
     new_booking = create_booking(db, booking_data)
     
-    # Update rider status to not available and in riding
+    # 5. Update the rider's status to mark them as busy (not available, in riding)
     update_rider_status(rider_id, is_available=False, in_riding=True)
     
     return new_booking
@@ -195,3 +204,13 @@ def process_booking_status_update(db: Session, booking_id: int, new_status: str)
         raise HTTPException(status_code=404, detail="Failed to update booking status")
 
     return updated_booking
+
+
+def delete_booking(db: Session, booking_id: int):
+    """Delete a booking by its ID."""
+    booking = get_booking_by_id(db, booking_id)
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    db.delete(booking)
+    db.commit()
+    return {"message": "Booking deleted successfully"}

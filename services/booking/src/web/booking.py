@@ -6,7 +6,8 @@ from src.service import rider as rider_service
 from src.model import booking as booking_schemas
 from src.model import rider as rider_schemas
 from src.data.init import get_db
-import requests
+
+
 
 RIDER_SERVICE_URL = "http://localhost:8002/riders"
 RIDE_MATCHING_URL = "http://localhost:8003/ride-matching"
@@ -64,3 +65,12 @@ async def get_bookings_by_status(
         raise HTTPException(status_code=400, detail="Invalid status")
     
     return booking_service.get_bookings_by_status(db, status)
+
+
+@router.delete("/{booking_id}", status_code=204)
+def delete_booking_endpoint(booking_id: int, db: Session = Depends(get_db)):
+    """
+    API endpoint to delete a booking by its ID.
+    Returns 204 No Content on success.
+    """
+    booking_service.delete_booking(db, booking_id)

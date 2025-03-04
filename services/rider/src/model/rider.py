@@ -53,6 +53,11 @@ class RiderUpdate(BaseModel):
 class RiderAvailabilityUpdate(BaseModel):
     is_available: bool
 
-#Update availability
+#Update riding status
 class RiderIn_RidingUpdate(BaseModel):
+    in_riding: bool
+    
+#Combined status update for system-to-system communication
+class RiderStatusUpdate(BaseModel):
+    is_available: bool
     in_riding: bool

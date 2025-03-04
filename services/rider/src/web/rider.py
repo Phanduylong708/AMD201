@@ -113,3 +113,30 @@ def delete_rider(
     if not success:
         raise HTTPException(status_code=404, detail="Rider not found")
     return None
+
+
+@router.patch("/{rider_id}/status")
+def update_rider_status(
+    rider_id: int,
+    status_update: schemas.RiderStatusUpdate,
+    db: Session = Depends(get_db)
+):
+    """
+    Update rider's availability and riding status.
+    This endpoint is used by the ride matching service.
+    No authentication required for system-to-system communication.
+    """
+    try:
+        db_rider = rider_service.get_rider(db, rider_id)
+        if not db_rider:
+            raise HTTPException(status_code=404, detail="Rider not found")
+            
+        # Update the rider's status
+        return rider_service.update_rider_status(
+            db, 
+            rider_id, 
+            status_update.is_available, 
+            status_update.in_riding
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))

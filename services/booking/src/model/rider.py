@@ -4,7 +4,7 @@ from typing import Optional
 class RiderBase(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     email: str = Field(..., min_length=5, max_length=100)
-    full_name: str = Field(..., min_length=1, max_length=100)
+    full_name: str = Field(..., min_length=1, max_length=100, pattern="^[A-Za-z0-9 ]+$")
     phone_number: str = Field(..., min_length=10, max_length=10)
     is_available: bool = Field(default=True, description="Rider availability status")
     vehicle_type: str = Field(..., min_length=3, max_length=9, description="Vehicle type")

@@ -1,5 +1,4 @@
 from pydantic import BaseModel, Field
-from typing import Optional
 
 class RideMatchRequest(BaseModel):
     """Request schema for finding a nearest rider"""

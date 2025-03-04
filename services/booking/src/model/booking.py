@@ -22,15 +22,21 @@ class BookingInDB(BookingBase):
 
 class BookingCreate(BaseModel):
     user_id: int
-    rider_id: Optional[int] = None  #Initially no assigned rider
-    distance_km: float
-    fare: float = 0.0   #Changed to float for consistency
-    status: str = "Pending"  #Default is Pending
+    # All other fields will be set automatically by the service
+    rider_id: Optional[int] = None
+    distance_km: Optional[float] = None
+    fare: float = 0.0
+    status: str = "Pending"
 
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "user_id": 1  # Only user_id is required
+            }
+        }
 
 class BookingUpdateStatus(BaseModel):  # ✅ FIXED: Changed from BookingUpdate
     status: str = Field(..., pattern="^(Pending|In Progress|Completed|Canceled)$")
-
 
 class BookingResponse(BookingInDB):
     pass

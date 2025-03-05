@@ -13,15 +13,18 @@ base_distance_matrix = {
     5: {1: 7, 2: 4, 3: 2, 4: 9, 5: 5},
 }
 
+
 def map_id_to_matrix(id: int) -> int:
     """Maps any ID to a number between 1 and 5 for the distance matrix."""
     return ((id - 1) % 5) + 1
+
 
 def get_distance(user_id: int, rider_id: int) -> float:
     """Get distance between a user and a rider using the base matrix."""
     mapped_user = map_id_to_matrix(user_id)
     mapped_rider = map_id_to_matrix(rider_id)
     return base_distance_matrix[mapped_user][mapped_rider]
+
 
 def find_all_available_riders(user_id: int) -> list[tuple[dict, float]]:
     """
@@ -55,6 +58,7 @@ def find_all_available_riders(user_id: int) -> list[tuple[dict, float]]:
             status_code=500,
             detail=f"Failed to communicate with Rider Service: {str(e)}"
         )
+
 
 def find_nearest_rider(user_id: int) -> tuple[dict, float]:
     """

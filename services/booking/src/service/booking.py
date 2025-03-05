@@ -116,20 +116,27 @@ def find_nearest_rider(user_id: int) -> tuple[int, float]:
         )
 
 
-
-
-
 def create_booking_with_rider(db: Session, booking_data: schemas.BookingCreate):
     """
     Create a new booking with automatic rider assignment.
     Steps:
-      1. Retrieve a sorted list of candidate riders from the Ride Matching Service.
-      2. Iterate over the list to find the first rider without an active booking.
-      3. If a free rider is found, set booking details and create the booking.
-      4. Update the rider's status to not available and in riding.
+      1. Check if the user already has an active booking.
+      2. Retrieve a sorted list of candidate riders from the Ride Matching Service.
+      3. Iterate over the list to find a rider without an active booking.
+      4. If no free rider is found, raise an error.
+      5. Otherwise, set booking details, create the booking record,
+         and update the rider's status.
     """
+    # Step 1: Check if the user already has an active booking.
+    active_booking = db.query(models.Booking).filter(
+        models.Booking.user_id == booking_data.user_id,
+        models.Booking.status.in_(["Pending", "In Progress"])
+    ).first()
+    if active_booking:
+        raise HTTPException(status_code=400, detail="User already has an active booking. Please wait for acceptance booking!")
+    
+    # Step 2: Retrieve sorted available riders from the Ride Matching Service.
     try:
-        # Call the Ride Matching Service endpoint that returns a list of candidates.
         response = requests.post(
             f"{RIDE_MATCHING_URL}/match-rider-list",
             json={"user_id": booking_data.user_id}
@@ -146,7 +153,7 @@ def create_booking_with_rider(db: Session, booking_data: schemas.BookingCreate):
     selected_rider_id = None
     selected_distance = None
 
-    # Iterate over candidate riders to check if they have an active booking.
+    # Step 3: Iterate over candidate riders to find one without an active booking.
     for candidate in candidate_list:
         rider_id = candidate.get("rider_id")
         distance_km = candidate.get("distance_km")
@@ -159,23 +166,23 @@ def create_booking_with_rider(db: Session, booking_data: schemas.BookingCreate):
             selected_distance = distance_km
             break
 
+    # Step 4: If no free rider is found, raise an error.
     if selected_rider_id is None:
         raise HTTPException(status_code=400, detail="No available riders can be assigned at the moment.")
 
-    # Set booking details with the selected rider.
+    # Step 5: Set booking details.
     booking_data.rider_id = selected_rider_id
     booking_data.distance_km = selected_distance
     booking_data.status = "Pending"
     booking_data.fare = calculate_fare(selected_distance)
 
-    # Create the booking.
+    # Create the booking record.
     new_booking = create_booking(db, booking_data)
 
     # Update the rider's status via Rider Service.
     update_rider_status(selected_rider_id, is_available=False, in_riding=True)
 
     return new_booking
-
 
 
 def update_rider_status(rider_id: int, is_available: bool, in_riding: bool) -> None:

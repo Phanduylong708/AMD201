@@ -11,6 +11,8 @@ from src.data.init import get_db
 
 RIDER_SERVICE_URL = "http://localhost:8002/riders"
 RIDE_MATCHING_URL = "http://localhost:8003/ride-matching"
+
+
 router = APIRouter(prefix="/booking", tags=["booking"])
 
 

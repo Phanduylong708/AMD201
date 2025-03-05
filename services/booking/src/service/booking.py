@@ -246,3 +246,4 @@ def delete_booking(db: Session, booking_id: int):
     db.delete(booking)
     db.commit()
     return {"message": "Booking deleted successfully"}
+

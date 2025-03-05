@@ -1,8 +1,6 @@
 from sqlalchemy.orm import Session
 from src.data.models import Booking
 from src.model import booking as schemas
-from src.service.rider import get_available_riders
-#from src.service.user import get_available_user
 from fastapi import Depends
 from src.error import BookingError
 

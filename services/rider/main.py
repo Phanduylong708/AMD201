@@ -25,21 +25,21 @@ app = FastAPI(
 )
 
 
-# ✅ Allow All Origins for Testing (You Can Restrict It Later)
+# Allow All Origins for Testing (You Can Restrict It Later)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # ✅ Allow all origins
+    allow_origins=["*"],  #Allow all origins
     allow_credentials=True,
-    allow_methods=["*"],  # ✅ Allow all methods (GET, POST, PUT, DELETE)
-    allow_headers=["*"],  # ✅ Allow all headers
+    allow_methods=["*"],  #Allow all methods (GET, POST, PUT, DELETE)
+    allow_headers=["*"],  #Allow all headers
 )
 
 
-# ✅ Register Rider Routes
+#Register Rider Routes
 app.include_router(rider_router)
 
 
-# ✅ Print all registered routes for debugging
+#Print all registered routes for debugging
 @app.on_event("startup")
 async def list_routes():
     print("\n🚀 Registered Routes in Rider Service:")

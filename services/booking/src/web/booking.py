@@ -1,10 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from src.service import booking as booking_service
-from src.service import rider as rider_service
-#from src.service import user as user_service
 from src.model import booking as booking_schemas
-from src.model import rider as rider_schemas
 from src.data.init import get_db
 
 
@@ -33,12 +30,6 @@ def get_booking_by_id(booking_id: int, db: Session = Depends(get_db)):
 def list_bookings(db: Session = Depends(get_db)):
     """API endpoint to list all bookings."""
     return booking_service.list_bookings(db)
-
-
-@router.get("/available-riders", response_model=list[rider_schemas.RiderResponse])
-def get_available_riders(db: Session = Depends(get_db)):
-    """API endpoint to retrieve all available riders."""
-    return rider_service.get_available_riders(db)
 
 
 @router.patch("/{booking_id}/status", response_model=booking_schemas.BookingResponse)

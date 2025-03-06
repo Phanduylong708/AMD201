@@ -11,9 +11,9 @@ def get_rider_by_username(db: Session, username: str):
     rider = db.query(Rider).filter(Rider.username == username).first()
     
     if not rider:
-        print("❌ Rider not found in the database")  # Debugging line
+        print("Rider not found in the database")  # Debugging line
     else:
-        print(f"✅ Rider found: {rider.username}")  # Debugging line
+        print(f"Rider found: {rider.username}")  # Debugging line
     
     return rider
 

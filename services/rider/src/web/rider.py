@@ -5,33 +5,24 @@ from src.data.init import get_db
 from src.data.models import get_rider_by_username, get_available_riders
 from src.service.security import get_current_user, create_access_token, verify_password
 from src.model import rider as schemas
-from fastapi.responses import JSONResponse
-from src.model.rider import LoginRequest
+from fastapi.security import OAuth2PasswordRequestForm
 import requests
+
 
 BOOKING_SERVICE_URL = "http://localhost:8004/booking"
 
 router = APIRouter(prefix="/riders")
 
 
-#Use API Gateway for authentication
 @router.post("/login")
-def login_rider(login_data: LoginRequest, db: Session = Depends(get_db)):  
-    """
-    Rider login endpoint.
-    """
-    print(f"🔍 Attempting login for {login_data.username}")     #Debugging
-
-    rider = get_rider_by_username(db, login_data.username)
-    if not rider or not verify_password(login_data.password, rider.hashed_password):
+def login_rider(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    # Extract username & password from form_data
+    rider = get_rider_by_username(db, form_data.username)
+    if not rider or not verify_password(form_data.password, rider.hashed_password):
         raise HTTPException(status_code=400, detail="Invalid username or password")
 
     access_token = create_access_token(data={"sub": rider.username, "role": "rider"})
-
-    return JSONResponse(
-        content={"access_token": access_token, "token_type": "bearer"},
-        status_code=200
-    )
+    return {"access_token": access_token, "token_type": "bearer"}
 
 
 # ✅ Create a New Rider

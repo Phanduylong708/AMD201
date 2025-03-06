@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from jose import jwt
 import os
 from src.data.rider import get_rider_by_username 
-from src.data.user import get_user_by_username
+# from src.data.user import get_user_by_username
 from fastapi import HTTPException, Depends
 from src.data.init import get_db
 from sqlalchemy.orm import Session

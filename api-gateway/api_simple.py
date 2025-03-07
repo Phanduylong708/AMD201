@@ -1,9 +1,17 @@
-from fastapi import FastAPI, Request, Depends
+from dotenv import load_dotenv
+from pathlib import Path
+import os
+
+# Load .env file from the current directory
+env_path = Path(__file__).resolve().parent / '.env'
+load_dotenv(dotenv_path=env_path)
+
+from fastapi import FastAPI, Request, Depends, Form
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 import httpx
-import os
 from datetime import timedelta
 from src.service.security import create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 from src.error import APIGatewayError, AuthError

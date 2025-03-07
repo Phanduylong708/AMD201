@@ -1,18 +1,10 @@
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
-from jose import jwt
+from jose import jwt, JWTError
 import os
-from src.data.rider import get_rider_by_username 
-# from src.data.user import get_user_by_username
 from fastapi import HTTPException, Depends
-from src.data.init import get_db
-from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordBearer
-
-
-rider_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="http://localhost:8002/riders/login")
-#user_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/gateway/login/user")
-
+import error as status
 
 # Load environment variables
 SECRET_KEY = os.getenv("SECRET_KEY")

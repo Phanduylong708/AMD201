@@ -6,11 +6,10 @@ import os
 env_path = Path(__file__).resolve().parent / '.env'
 load_dotenv(dotenv_path=env_path)
 
-from fastapi import FastAPI, Request, Depends, Form
+from fastapi import FastAPI, Request, Depends
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 import httpx
 from datetime import timedelta
 from src.service.security import create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
@@ -62,6 +61,8 @@ async def forward_request(service_url: str, method: str, path: str, body=None, h
     except Exception as e:
         raise APIGatewayError.gateway_error(e)
 
+
+
 @app.post("/gateway/login/{service}", tags=["Authentication"])
 async def login(service: str, form_data: OAuth2PasswordRequestForm = Depends()):
     """Login endpoint that supports both users and riders."""
@@ -93,6 +94,7 @@ async def login(service: str, form_data: OAuth2PasswordRequestForm = Depends()):
         
     except httpx.RequestError as e:
         raise APIGatewayError.service_connection_error(service, e)
+
 
 @app.api_route("/gateway/{service}/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
 async def gateway(service: str, path: str, request: Request):
@@ -137,6 +139,7 @@ async def gateway(service: str, path: str, request: Request):
         raise APIGatewayError.service_connection_error(service, e)
     except Exception as e:
         raise APIGatewayError.gateway_error(e)
+
 
 if __name__ == "__main__":
     import uvicorn

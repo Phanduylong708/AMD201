@@ -2,6 +2,7 @@ from fastapi import HTTPException
 from fastapi.responses import JSONResponse
 import httpx
 
+
 class APIGatewayError:
     @staticmethod
     def service_not_found(service: str, available_services: list) -> HTTPException:

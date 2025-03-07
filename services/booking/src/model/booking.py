@@ -35,7 +35,7 @@ class BookingCreate(BaseModel):
             }
         }
 
-class BookingUpdateStatus(BaseModel):  # ✅ FIXED: Changed from BookingUpdate
+class BookingUpdateStatus(BaseModel):
     status: str = Field(..., pattern="^(Pending|In Progress|Completed|Canceled)$")
 
 class BookingResponse(BookingInDB):

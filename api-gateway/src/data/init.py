@@ -1,17 +1,17 @@
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-#db_name = os.environ.get("CRYPTID_SQLITE_DB", "cryptids.db")
-#conn = connect(db_name, check_same_thread=False)
-#curs = conn.cursor()
 
-user = "postgres"
-password = "123"
-host = "localhost"
-port = "5432"
-database = "rideshare"
-connection_str = f'postgresql://{user}:{password}@{host}:{port}/{database}'
+# Load database credentials from environment variables with defaults
+user = os.getenv("DB_USER", "postgres")
+password = os.getenv("DB_PASSWORD", "123")
+host = os.getenv("DB_HOST", "localhost")
+port = os.getenv("DB_PORT", "5432")
+database = os.getenv("DB_NAME", "rideshare")
+
+connection_str = f"postgresql://{user}:{password}@{host}:{port}/{database}"
 engine = create_engine(connection_str)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
@@ -25,4 +25,3 @@ def get_db():
 
 def create_tables():
     Base.metadata.create_all(bind=engine)
-

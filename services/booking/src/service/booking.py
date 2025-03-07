@@ -120,36 +120,68 @@ def create_booking_with_rider(db: Session, booking_data: schemas.BookingCreate):
     """
     Create a new booking with automatic rider assignment.
     Steps:
-      1. Find the nearest available rider and retrieve the distance.
-      2. Check if the selected rider already has an active booking 
-         (with status "Pending" or "In Progress").
-      3. If so, raise an HTTPException.
-      4. Otherwise, set the booking details and create the booking record.
-      5. Update the rider's status to not available and mark them as in a ride.
+      1. Check if the user already has an active booking.
+      2. Retrieve a sorted list of candidate riders from the Ride Matching Service.
+      3. Iterate over the list to find a rider without an active booking.
+      4. If no free rider is found, raise an error.
+      5. Otherwise, set booking details, create the booking record,
+         and update the rider's status.
     """
-    # 1. Find the nearest rider and get the distance
-    rider_id, distance_km = find_nearest_rider(booking_data.user_id)
-    
-    # 2. Check if this rider already has an active booking
-    existing_booking = db.query(models.Booking).filter(
-        models.Booking.rider_id == rider_id,
+    # Step 1: Check if the user already has an active booking.
+    active_booking = db.query(models.Booking).filter(
+        models.Booking.user_id == booking_data.user_id,
         models.Booking.status.in_(["Pending", "In Progress"])
     ).first()
-    if existing_booking:
-        raise HTTPException(status_code=400, detail="Driver already has an active booking.")
+    if active_booking:
+        raise HTTPException(status_code=400, detail="User already has an active booking. Please wait for acceptance booking!")
     
-    # 3. Set all required fields for the new booking
-    booking_data.rider_id = rider_id
-    booking_data.distance_km = distance_km
+    # Step 2: Retrieve sorted available riders from the Ride Matching Service.
+    try:
+        response = requests.post(
+            f"{RIDE_MATCHING_URL}/match-rider-list",
+            json={"user_id": booking_data.user_id}
+        )
+        if response.status_code != 200:
+            raise HTTPException(status_code=400, detail="No available riders found")
+        candidate_list = response.json()  # List of dicts: [{"rider_id": x, "distance_km": y}, ...]
+    except requests.RequestException as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to communicate with Ride Matching Service: {str(e)}"
+        )
+
+    selected_rider_id = None
+    selected_distance = None
+
+    # Step 3: Iterate over candidate riders to find one without an active booking.
+    for candidate in candidate_list:
+        rider_id = candidate.get("rider_id")
+        distance_km = candidate.get("distance_km")
+        existing_booking = db.query(models.Booking).filter(
+            models.Booking.rider_id == rider_id,
+            models.Booking.status.in_(["Pending", "In Progress"])
+        ).first()
+        if not existing_booking:
+            selected_rider_id = rider_id
+            selected_distance = distance_km
+            break
+
+    # Step 4: If no free rider is found, raise an error.
+    if selected_rider_id is None:
+        raise HTTPException(status_code=400, detail="No available riders can be assigned at the moment.")
+
+    # Step 5: Set booking details.
+    booking_data.rider_id = selected_rider_id
+    booking_data.distance_km = selected_distance
     booking_data.status = "Pending"
-    booking_data.fare = calculate_fare(distance_km)
-    
-    # 4. Create the booking record in the database
+    booking_data.fare = calculate_fare(selected_distance)
+
+    # Create the booking record.
     new_booking = create_booking(db, booking_data)
-    
-    # 5. Update the rider's status to mark them as busy (not available, in riding)
-    update_rider_status(rider_id, is_available=False, in_riding=True)
-    
+
+    # Update the rider's status via Rider Service.
+    update_rider_status(selected_rider_id, is_available=False, in_riding=True)
+
     return new_booking
 
 
@@ -214,3 +246,4 @@ def delete_booking(db: Session, booking_id: int):
     db.delete(booking)
     db.commit()
     return {"message": "Booking deleted successfully"}
+

@@ -1,8 +1,7 @@
 import requests
-from random import choice
 from fastapi import HTTPException
 
-# Rider Service Base URL
+# Rider Service Base URL (this service calls the Rider Service API)
 RIDER_SERVICE_URL = "http://localhost:8002/riders"
 
 # Simulated distance matrix - base matrix for 5x5 grid
@@ -14,60 +13,58 @@ base_distance_matrix = {
     5: {1: 7, 2: 4, 3: 2, 4: 9, 5: 5},
 }
 
+
 def map_id_to_matrix(id: int) -> int:
-    """Maps any ID to a number between 1-5 for the distance matrix."""
-    mapped_id = ((id - 1) % 5) + 1
-    return mapped_id
+    """Maps any ID to a number between 1 and 5 for the distance matrix."""
+    return ((id - 1) % 5) + 1
 
 
 def get_distance(user_id: int, rider_id: int) -> float:
-    """Get distance between a user and rider using the base matrix."""
+    """Get distance between a user and a rider using the base matrix."""
     mapped_user = map_id_to_matrix(user_id)
     mapped_rider = map_id_to_matrix(rider_id)
     return base_distance_matrix[mapped_user][mapped_rider]
 
-def find_nearest_rider(user_id: int) -> tuple[dict, float]:
+
+def find_all_available_riders(user_id: int) -> list[tuple[dict, float]]:
     """
-    Find the nearest available rider using Rider Service API.
-    Returns:
-        tuple: (rider_dict, distance_km)
-    Raises:
-        HTTPException: If no riders available or service error
+    Retrieve all available riders from the Rider Service,
+    compute their distance from the user using the simulated distance matrix,
+    and return a sorted list (closest first) as tuples of (rider_dict, distance_km).
     """
     try:
-        # Get available riders from Rider Service
         response = requests.get(f"{RIDER_SERVICE_URL}/available-riders")
         if response.status_code != 200:
-            raise HTTPException(status_code=400, detail="No riders available from Rider Service")
-
+            raise HTTPException(status_code=400, detail="No available riders from Rider Service")
         riders = response.json()
         if not riders:
             raise HTTPException(status_code=400, detail="No available riders found")
 
-        # Calculate distances for all available riders
         rider_distance_list = []
         for rider in riders:
-            rider_id = rider.get('id')
+            rider_id = rider.get("id")
             if rider_id:
                 distance = get_distance(user_id, rider_id)
                 rider_distance_list.append((rider, distance))
-
         if not rider_distance_list:
             raise HTTPException(status_code=400, detail="Could not calculate distances for any riders")
 
-        # Find the minimum distance
-        nearest_distance = min(dist for _, dist in rider_distance_list)
-        closest_riders = [r for r, dist in rider_distance_list if dist == nearest_distance]
-
-        if not closest_riders:
-            raise HTTPException(status_code=400, detail="No closest rider found")
-
-        # Randomly select one of the closest riders
-        selected_rider = choice(closest_riders)
-        return selected_rider, nearest_distance
+        # Sort by distance (smallest first)
+        rider_distance_list.sort(key=lambda x: x[1])
+        return rider_distance_list
 
     except requests.RequestException as e:
         raise HTTPException(
             status_code=500,
             detail=f"Failed to communicate with Rider Service: {str(e)}"
         )
+
+
+def find_nearest_rider(user_id: int) -> tuple[dict, float]:
+    """
+    Return the nearest available rider (the first element from the sorted list).
+    """
+    sorted_riders = find_all_available_riders(user_id)
+    if not sorted_riders:
+        raise HTTPException(status_code=400, detail="No available riders found")
+    return sorted_riders[0]

@@ -19,3 +19,4 @@ class RiderResponse(RiderBase):
 
     class Config:
         from_attributes = True  # ✅ Ensures SQLAlchemy model -> Pydantic conversion
+

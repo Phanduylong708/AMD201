@@ -2,9 +2,11 @@ from dotenv import load_dotenv
 from pathlib import Path
 import os
 
+
 # Load .env file from the current directory
 env_path = Path(__file__).resolve().parent / '.env'
 load_dotenv(dotenv_path=env_path)
+
 
 from fastapi import FastAPI, Request, Depends
 from fastapi.security import OAuth2PasswordRequestForm
@@ -15,6 +17,7 @@ from datetime import timedelta
 from src.service.security import create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 from src.error import APIGatewayError, AuthError
 
+
 # Service URLs from environment variables (with defaults)
 services = {
     "user": os.getenv("USER_SERVICE_URL", "http://localhost:8001"),
@@ -23,11 +26,13 @@ services = {
     "ride_matching": os.getenv("RIDE_MATCHING_SERVICE_URL", "http://localhost:8003"),
 }
 
+
 app = FastAPI(
     title="API Gateway",
     description="Central entry point for Users & Riders",
     version="1.0.0"
 )
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -60,7 +65,6 @@ async def forward_request(service_url: str, method: str, path: str, body=None, h
         raise APIGatewayError.service_connection_error("service", "Timeout")
     except Exception as e:
         raise APIGatewayError.gateway_error(e)
-
 
 
 @app.post("/gateway/login/{service}", tags=["Authentication"])

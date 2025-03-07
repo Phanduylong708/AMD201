@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 
 # Load database credentials from environment variables with defaults
 user = os.getenv("DB_USER", "postgres")
-password = os.getenv("DB_PASSWORD", "123")
+password = os.getenv("DB_PASSWORD", "1")
 host = os.getenv("DB_HOST", "localhost")
 port = os.getenv("DB_PORT", "5432")
 database = os.getenv("DB_NAME", "rideshare")

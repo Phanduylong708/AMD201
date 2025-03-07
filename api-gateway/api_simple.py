@@ -20,8 +20,8 @@ from src.error import APIGatewayError, AuthError
 services = {
     "user": os.getenv("USER_SERVICE_URL", "http://localhost:8001"),
     "rider": os.getenv("RIDER_SERVICE_URL", "http://localhost:8002"),
-    "booking": os.getenv("BOOKING_SERVICE_URL", "http://localhost:8003"),
-    "ride_matching": os.getenv("RIDE_MATCHING_SERVICE_URL", "http://localhost:8004"),
+    "booking": os.getenv("BOOKING_SERVICE_URL", "http://localhost:8004"),
+    "ride_matching": os.getenv("RIDE_MATCHING_SERVICE_URL", "http://localhost:8003"),
 }
 
 app = FastAPI(
@@ -102,13 +102,21 @@ async def gateway(service: str, path: str, request: Request):
     
     service_url = services[service]
     
+    # Get query parameters
+    query_params = str(request.query_params) if request.query_params else ""
+    
     # Get request body for methods that typically have one
     body = None
     if request.method in ["POST", "PUT", "PATCH"]:
-        try:
-            body = await request.json()
-        except Exception as e:
-            raise APIGatewayError.invalid_json_body(e)
+        content_type = request.headers.get("content-type", "").lower()
+        if "application/json" in content_type:
+            try:
+                body = await request.json()
+            except Exception as e:
+                raise APIGatewayError.invalid_json_body(e)
+        elif "application/x-www-form-urlencoded" in content_type:
+            form_data = await request.form()
+            body = dict(form_data)
     
     # Forward any authorization header
     headers = {}
@@ -117,7 +125,9 @@ async def gateway(service: str, path: str, request: Request):
     
     try:
         print(f"Gateway: Forwarding {request.method} request to {service} service, path: /{path}")
-        response = await forward_request(service_url, request.method, f"/{path}", body, headers)
+        # Add query params to path if they exist
+        full_path = f"/{path}{'?' + query_params if query_params else ''}"
+        response = await forward_request(service_url, request.method, full_path, body, headers)
         
         # Handle response using the error handler
         status_code, content = APIGatewayError.handle_service_response(response)

@@ -42,16 +42,3 @@ def update_booking_status(db: Session, booking_id: int, status: str):
     db.refresh(booking)
     return booking
 
-
-def find_nearest_rider(pickup_location):
-    """Find the nearest available rider (Fake distance calculation)."""
-    riders = get_available_riders()
-    if not riders:
-        return None
-    
-    # Fake distance function (Replace with real logic later)
-    def fake_distance(pickup, rider):
-        return abs(pickup[0] - rider.lat) + abs(pickup[1] - rider.lon)
-
-    riders.sort(key=lambda r: fake_distance(pickup_location, r))
-    return riders[0] if riders else None

@@ -6,12 +6,19 @@ from src.data.rider import get_rider_by_username
 # from src.data.user import get_user_by_username
 from fastapi import HTTPException, Depends
 from src.data.init import get_db
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from fastapi import status
+from sqlalchemy.orm import Session
+from fastapi.security import OAuth2PasswordBearer
 
 
-# JWT Configuration
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-keep-it-secret")
+rider_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="http://localhost:8002/riders/login")
+#user_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/gateway/login/user")
+
+
+# Load environment variables
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY must be set in environment variables")
+
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 

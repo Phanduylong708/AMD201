@@ -4,7 +4,7 @@ from jose import jwt, JWTError
 import os
 from fastapi import HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
-import error as status
+import src.error as status
 
 # Load environment variables
 SECRET_KEY = os.getenv("SECRET_KEY")

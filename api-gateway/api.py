@@ -18,7 +18,7 @@ app.add_middleware(
 )
 
 app.include_router(rider_router, tags=["Rider Gateway"])
-# app.include_router(user_router, tags=["User Gateway"])
+#app.include_router(user_router, tags=["User Gateway"])
 
 if __name__ == "__main__":
     import uvicorn

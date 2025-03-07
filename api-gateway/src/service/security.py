@@ -11,7 +11,7 @@ from fastapi.security import OAuth2PasswordBearer
 
 
 rider_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="http://localhost:8002/riders/login")
-# user_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/gateway/login/user")
+#user_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/gateway/login/user")
 
 
 # Load environment variables

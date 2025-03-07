@@ -1,25 +1,24 @@
 from fastapi import APIRouter, HTTPException, Depends, Security, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.responses import JSONResponse
-from src.model.rider import AvailabilityUpdate
+from src.model.rider import AvailabilityUpdate, RiderResponse
 import httpx
 import os
 from src.service.security import rider_oauth2_scheme
+from typing import List
 
 
 # Service URLs from environment variables (with defaults)
 service = {
     "user": os.getenv("USER_SERVICE_URL", "http://localhost:8001"),
     "rider": os.getenv("RIDER_SERVICE_URL", "http://localhost:8002"),
-    "booking": os.getenv("BOOKING_SERVICE_URL", "http://localhost:8003"),
-    "ride_matching": os.getenv("RIDE_MATCHING_SERVICE_URL", "http://localhost:8004"),
 }
 
 rider_router = APIRouter()
 
 
 async def forward_request(service_url: str, method: str, path: str, body=None, headers=None):
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(follow_redirects=True) as client:
         response = await client.request(
             method,
             f"{service_url}{path}",
@@ -27,7 +26,6 @@ async def forward_request(service_url: str, method: str, path: str, body=None, h
             headers=headers
         )
         return response
-
 
 
 @rider_router.post("/gateway/login/rider")
@@ -57,7 +55,8 @@ async def login_rider(form_data: OAuth2PasswordRequestForm = Depends()):
         )
     return JSONResponse(content=response.json(), status_code=response.status_code)
 
-@rider_router.get("/gateway/riders")
+
+@rider_router.get("/gateway/riders", response_model=List[RiderResponse])
 async def gateway_get_riders():
     """
     Forwards a GET request to retrieve all riders from the Rider Service.
@@ -79,10 +78,6 @@ async def gateway_update_availability(
 ):
     """
     API Gateway endpoint to update rider availability.
-    1. Receives a JSON body: {"is_available": bool}
-    2. Forwards 'is_available' as a query parameter to the Rider Service
-       at /riders/{rider_id}/availability?is_available=...
-    3. Attaches the Authorization header with the JWT token.
     """
     service_url = service["rider"]
 

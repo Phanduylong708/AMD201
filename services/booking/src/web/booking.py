@@ -19,7 +19,7 @@ def create_booking(booking_data: booking_schemas.BookingCreate, db: Session = De
     return booking_service.create_booking_with_rider(db, booking_data)
 
 
-@router.get("/id/{booking_id}", response_model=booking_schemas.BookingResponse)
+@router.get("/{booking_id}", response_model=booking_schemas.BookingResponse)
 def get_booking_by_id(booking_id: int, db: Session = Depends(get_db)):
     """API endpoint to retrieve a booking by ID."""
     booking = booking_service.get_booking_by_id(db, booking_id)

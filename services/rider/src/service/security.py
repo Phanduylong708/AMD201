@@ -34,8 +34,7 @@ def get_password_hash(password: str) -> str:
     return pwd_context.hash(password)
 
 
-#Use API Gateway for token authentication
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="http://localhost:8002/riders/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/riders/login")
 
 
 #JWT token generation

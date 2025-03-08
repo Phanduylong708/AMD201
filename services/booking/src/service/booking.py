@@ -5,10 +5,55 @@ from src.data.init import get_db
 from fastapi import Depends
 import requests
 from fastapi import HTTPException
+from src.error import BookingError
 
 # Service URLs
 RIDE_MATCHING_URL = "http://localhost:8003/ride-matching"
 RIDER_SERVICE_URL = "http://localhost:8002/riders"
+USER_SERVICE_URL = "http://localhost:8001/users"
+
+# User Service Functions
+def check_user_exists(user_id: int) -> bool:
+    """
+    Check if a user exists through User Service API.
+    Note: Since the User service requires authentication, we'll use a workaround
+    by checking the list of all users instead of a direct user lookup.
+    """
+    try:
+        # Get all users (this endpoint doesn't require authentication)
+        response = requests.get(f"{USER_SERVICE_URL}/")
+        if response.status_code != 200:
+            return False
+        
+        # Check if the user ID exists in the list
+        users = response.json()
+        return any(user["id"] == user_id for user in users)
+    except requests.RequestException:
+        # If we can't reach the user service, assume user is not available
+        return False
+
+def get_user_details(user_id: int) -> dict:
+    """
+    Retrieve user details through User Service API.
+    Note: Since the User service requires authentication, we'll use a workaround
+    by getting the user from the list of all users.
+    """
+    try:
+        # Get all users (this endpoint doesn't require authentication)
+        response = requests.get(f"{USER_SERVICE_URL}/")
+        if response.status_code != 200:
+            raise BookingError.booking_not_found("User not found")
+        
+        # Find the user in the list
+        users = response.json()
+        user = next((user for user in users if user["id"] == user_id), None)
+        
+        if not user:
+            raise BookingError.booking_not_found("User not found")
+            
+        return user
+    except requests.RequestException as e:
+        raise BookingError.user_service_error(f"Failed to communicate with User service: {str(e)}")
 
 def calculate_fare(distance_km: float) -> float:
     """Calculate fare based on a tiered pricing model."""
@@ -120,40 +165,42 @@ def create_booking_with_rider(db: Session, booking_data: schemas.BookingCreate):
     """
     Create a new booking with automatic rider assignment.
     Steps:
-      1. Check if the user already has an active booking.
-      2. Retrieve a sorted list of candidate riders from the Ride Matching Service.
-      3. Iterate over the list to find a rider without an active booking.
-      4. If no free rider is found, raise an error.
-      5. Otherwise, set booking details, create the booking record,
+      1. Verify the user exists
+      2. Check if the user already has an active booking.
+      3. Retrieve a sorted list of candidate riders from the Ride Matching Service.
+      4. Iterate over the list to find a rider without an active booking.
+      5. If no free rider is found, raise an error.
+      6. Otherwise, set booking details, create the booking record,
          and update the rider's status.
     """
-    # Step 1: Check if the user already has an active booking.
+    # Step 1: Verify the user exists through User Service
+    if not check_user_exists(booking_data.user_id):
+        raise BookingError.booking_not_found("User not found or unavailable")
+    
+    # Step 2: Check if the user already has an active booking.
     active_booking = db.query(models.Booking).filter(
         models.Booking.user_id == booking_data.user_id,
         models.Booking.status.in_(["Pending", "In Progress"])
     ).first()
     if active_booking:
-        raise HTTPException(status_code=400, detail="User already has an active booking. Please wait for acceptance booking!")
+        raise BookingError.active_booking_exists("User already has an active booking. Please wait for acceptance booking!")
     
-    # Step 2: Retrieve sorted available riders from the Ride Matching Service.
+    # Step 3: Retrieve sorted available riders from the Ride Matching Service.
     try:
         response = requests.post(
             f"{RIDE_MATCHING_URL}/match-rider-list",
             json={"user_id": booking_data.user_id}
         )
         if response.status_code != 200:
-            raise HTTPException(status_code=400, detail="No available riders found")
+            raise BookingError.rider_not_available("No available riders found")
         candidate_list = response.json()  # List of dicts: [{"rider_id": x, "distance_km": y}, ...]
     except requests.RequestException as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to communicate with Ride Matching Service: {str(e)}"
-        )
+        raise BookingError.ride_matching_service_error(f"Failed to communicate with Ride Matching Service: {str(e)}")
 
     selected_rider_id = None
     selected_distance = None
 
-    # Step 3: Iterate over candidate riders to find one without an active booking.
+    # Step 4: Iterate over candidate riders to find one without an active booking.
     for candidate in candidate_list:
         rider_id = candidate.get("rider_id")
         distance_km = candidate.get("distance_km")
@@ -166,11 +213,11 @@ def create_booking_with_rider(db: Session, booking_data: schemas.BookingCreate):
             selected_distance = distance_km
             break
 
-    # Step 4: If no free rider is found, raise an error.
+    # Step 5: If no free rider is found, raise an error.
     if selected_rider_id is None:
         raise HTTPException(status_code=400, detail="No available riders can be assigned at the moment.")
 
-    # Step 5: Set booking details.
+    # Step 6: Set booking details.
     booking_data.rider_id = selected_rider_id
     booking_data.distance_km = selected_distance
     booking_data.status = "Pending"
@@ -196,12 +243,9 @@ def update_rider_status(rider_id: int, is_available: bool, in_riding: bool) -> N
             json={"is_available": is_available, "in_riding": in_riding}
         )
         if response.status_code != 200:
-            raise HTTPException(status_code=400, detail="Failed to update rider status")
+            raise BookingError.rider_service_error("Failed to update rider status")
     except requests.RequestException as e:
-        raise HTTPException(
-            status_code=500, 
-            detail=f"Failed to communicate with Rider Service: {str(e)}"
-        )
+        raise BookingError.rider_service_error(f"Failed to communicate with Rider Service: {str(e)}")
 
 
 def process_booking_status_update(db: Session, booking_id: int, new_status: str):
@@ -216,14 +260,11 @@ def process_booking_status_update(db: Session, booking_id: int, new_status: str)
     # Get current booking
     current_booking = get_booking_by_id(db, booking_id)
     if not current_booking:
-        raise HTTPException(status_code=404, detail="Booking not found")
+        raise BookingError.booking_not_found("Booking not found")
 
     # Validate status transition
     if not validate_status_transition(current_booking.status, new_status):
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid status transition from {current_booking.status} to {new_status}"
-        )
+        raise BookingError.invalid_booking_status(f"Invalid status transition from {current_booking.status} to {new_status}")
 
     # Update rider status based on booking status change
     # No need to update for "In Progress" since rider is already marked as in_riding=True
@@ -233,7 +274,7 @@ def process_booking_status_update(db: Session, booking_id: int, new_status: str)
     # Update booking status
     updated_booking = update_booking_status_db(db, booking_id, new_status)
     if not updated_booking:
-        raise HTTPException(status_code=404, detail="Failed to update booking status")
+        raise BookingError.booking_not_found("Failed to update booking status")
 
     return updated_booking
 
@@ -242,7 +283,7 @@ def delete_booking(db: Session, booking_id: int):
     """Delete a booking by its ID."""
     booking = get_booking_by_id(db, booking_id)
     if not booking:
-        raise HTTPException(status_code=404, detail="Booking not found")
+        raise BookingError.booking_not_found("Booking not found")
     db.delete(booking)
     db.commit()
     return {"message": "Booking deleted successfully"}

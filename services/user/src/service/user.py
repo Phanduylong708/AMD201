@@ -1,6 +1,5 @@
 from src.data import user as data_user
 from src.model import user as schemas
-from src.error import UserError
 
 
 def create_user(user: schemas.UserCreate):

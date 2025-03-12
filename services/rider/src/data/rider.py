@@ -4,6 +4,7 @@ from src.model import rider as schemas
 from src.service.security import get_password_hash
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from src.error import HTTPException
+from src.error import RiderError
 
 
 def get_rider(db: Session, rider_id: int):
@@ -34,7 +35,8 @@ def create_rider(rider: schemas.RiderCreate, db: Session):
         return db_rider
     except IntegrityError as e:
         db.rollback()
-        raise HTTPException(status_code=400, detail="Duplicate entry error")
+        error_message = str(e.orig) if hasattr(e, 'orig') and e.orig else str(e)
+        raise RiderError.parse_duplicate_error(error_message)
     except SQLAlchemyError as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
@@ -63,9 +65,10 @@ def update_rider(rider_id: int, rider: schemas.RiderUpdate, current_user: dict, 
         db.commit()
         db.refresh(db_rider)
         return db_rider
-    except IntegrityError:
+    except IntegrityError as e:
         db.rollback()
-        raise HTTPException(status_code=400, detail="Update failed due to duplicate entry.")
+        error_message = str(e.orig) if hasattr(e, 'orig') and e.orig else str(e)
+        raise RiderError.parse_duplicate_error(error_message)
     except SQLAlchemyError as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")

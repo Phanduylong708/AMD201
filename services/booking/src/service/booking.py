@@ -6,6 +6,7 @@ from fastapi import Depends
 import requests
 from fastapi import HTTPException
 from src.error import BookingError
+from src.data.booking import create_booking, get_booking_by_id, update_booking_status_db, list_bookings, get_bookings_by_status, delete_booking
 
 # Service URLs
 RIDE_MATCHING_URL = "http://localhost:8003/ride-matching"
@@ -62,51 +63,6 @@ def calculate_fare(distance_km: float) -> float:
     elif distance_km <= 4:
         return round(distance_km * 15000, 2)
     return round(distance_km * 12000, 2)
-
-
-def create_booking(db: Session, booking_data: schemas.BookingCreate):
-    """Create a new booking."""
-    fare = calculate_fare(booking_data.distance_km)
-    # Update booking_data with the calculated fare
-    booking_data.fare = fare
-    new_booking = models.Booking(**booking_data.dict())
-    
-    db.add(new_booking)
-    db.commit()
-    db.refresh(new_booking)
-    return new_booking
-
-
-def get_booking_by_id(db: Session, booking_id: int):
-    """Retrieve a booking by ID."""
-    return db.query(models.Booking).filter(models.Booking.id == booking_id).first()
-
-
-def update_booking_status_db(db: Session, booking_id: int, new_status: str):
-    """
-    Update the status of a booking.
-    Returns:
-        - Updated booking if successful
-        - None if booking not found
-    """
-    booking = get_booking_by_id(db, booking_id)
-    if not booking:
-        return None
-        
-    booking.status = new_status
-    db.commit()
-    db.refresh(booking)
-    return booking
-
-
-def list_bookings(db: Session):
-    """Retrieve all bookings."""
-    return db.query(models.Booking).all()
-
-
-def get_bookings_by_status(db: Session, status: str):
-    """Retrieve all bookings with a specific status."""
-    return db.query(models.Booking).filter(models.Booking.status == status).all()
 
 
 def validate_status_transition(current_status: str, new_status: str) -> bool:
@@ -277,14 +233,4 @@ def process_booking_status_update(db: Session, booking_id: int, new_status: str)
         raise BookingError.booking_not_found("Failed to update booking status")
 
     return updated_booking
-
-
-def delete_booking(db: Session, booking_id: int):
-    """Delete a booking by its ID."""
-    booking = get_booking_by_id(db, booking_id)
-    if not booking:
-        raise BookingError.booking_not_found("Booking not found")
-    db.delete(booking)
-    db.commit()
-    return {"message": "Booking deleted successfully"}
 

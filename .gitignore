@@ -77,3 +77,4 @@ __pycache__/
 # Linh tinh
 excluded/
 test_*.py
+codebase.md

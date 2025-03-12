@@ -21,7 +21,7 @@ class BookingInDB(BookingBase):
         from_attributes = True  #Updated for Pydantic v2
 
 class BookingCreate(BaseModel):
-    user_id: int
+    user_id: Optional[int] = None
     # All other fields will be set automatically by the service
     rider_id: Optional[int] = None
     distance_km: Optional[float] = None
@@ -31,7 +31,8 @@ class BookingCreate(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
-                "user_id": 1  # Only user_id is required
+                "user_id": 1,  # Optional: provided by system if not present
+                "distance_km": 3.5
             }
         }
 

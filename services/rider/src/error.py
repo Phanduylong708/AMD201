@@ -23,7 +23,7 @@ class RiderError:
 
     VEHICLE_EXISTS = HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
-        detail="This vehicle is already registered with another rider."
+        detail="The license plate number you entered is already registered with another rider. Please verify your input or use a different license plate."
     )
 
     INVALID_CREDENTIALS = HTTPException(
@@ -50,3 +50,18 @@ class RiderError:
         status_code=status.HTTP_400_BAD_REQUEST,
         detail="Duplicate entry found. Please check your username, email, phone number, or license plate."
     )
+
+    @staticmethod
+    def parse_duplicate_error(detail: str) -> HTTPException:
+        lower_detail = detail.lower()
+        if "username" in lower_detail:
+            return RiderError.USERNAME_EXISTS
+        elif "email" in lower_detail:
+            return RiderError.EMAIL_EXISTS
+        elif "phone" in lower_detail:
+            return RiderError.PHONE_EXISTS
+        elif "license_plate" in lower_detail:
+            return RiderError.VEHICLE_EXISTS
+        elif "driving_licence" in lower_detail:
+            return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="This driving licence is already registered. Please use another driving licence.")
+        return RiderError.DUPLICATE_ENTRY

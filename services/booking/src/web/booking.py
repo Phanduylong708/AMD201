@@ -3,18 +3,40 @@ from sqlalchemy.orm import Session
 from src.service import booking as booking_service
 from src.model import booking as booking_schemas
 from src.data.init import get_db
+from fastapi.security import OAuth2PasswordBearer
+from src.service.security import get_current_booking
+import requests
+from src.error import BookingError
 
 
 RIDER_SERVICE_URL = "http://localhost:8002/riders"
 RIDE_MATCHING_URL = "http://localhost:8003/ride-matching"
 
 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
+
+
 router = APIRouter(prefix="/booking", tags=["booking"])
 
 
 @router.post("/", response_model=booking_schemas.BookingResponse)
-def create_booking(booking_data: booking_schemas.BookingCreate, db: Session = Depends(get_db)):
-    """Create a new booking with automatic rider assignment."""
+async def create_booking(booking_data: booking_schemas.BookingCreate,
+                         token: str = Depends(oauth2_scheme),
+                         db: Session = Depends(get_db)):
+    """Create a new booking with automatic rider assignment using token for user authentication."""
+    current_user = await get_current_booking(token)
+    if str(current_user).isdigit():
+        booking_data.user_id = int(current_user)
+    else:
+        # Fallback: if current_user is not numeric, fetch user details from User Service
+        headers = {"Authorization": "Bearer " + token}
+        user_response = requests.get("http://localhost:8001/users/me", headers=headers)
+        if user_response.status_code != 200:
+            raise BookingError.user_service_error("Failed to retrieve user details from user service")
+        user_data = user_response.json()
+        if "id" not in user_data:
+            raise BookingError.user_service_error("User id not found in response from user service")
+        booking_data.user_id = user_data["id"]
     return booking_service.create_booking_with_rider(db, booking_data)
 
 

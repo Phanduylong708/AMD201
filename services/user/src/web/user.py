@@ -68,45 +68,6 @@ def auth_status(current_user: str = Depends(get_current_user_multi)):
         raise HTTPException(status_code=401, detail="User not found, please log in again")
     return {"message": "You have been successfully authorized", "username": current_user}
 
-# New router for admin operations without using Bearer prefix
-ADMIN_TOKEN = "admin_static_token"
-
-def get_current_admin(authorization: str = Depends(api_key_header)) -> str:
-    if not authorization:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    token = authorization.strip()
-    if token != ADMIN_TOKEN:
-        raise HTTPException(status_code=401, detail="Not authorized as admin")
-    return "admin"
-
-admin_router = APIRouter()
-
-@admin_router.get("/users", response_model=List[schemas.UserResponse])
-def admin_read_users(current_admin: str = Depends(get_current_admin)):
-    return user_service.get_users(skip=0, limit=100)
-
-@admin_router.get("/users/{user_id}", response_model=schemas.UserResponse)
-def admin_read_user(user_id: int, current_admin: str = Depends(get_current_admin)):
-    db_user = user_service.get_user(user_id)
-    if not db_user:
-        raise UserError.USER_NOT_FOUND
-    return db_user
-
-@admin_router.put("/users/{user_id}", response_model=schemas.UserResponse)
-def admin_update_user(user_id: int, user: schemas.UserUpdate, current_admin: str = Depends(get_current_admin)):
-    db_user = user_service.get_user(user_id)
-    if not db_user:
-        raise UserError.USER_NOT_FOUND
-    return user_service.update_user(user_id, user)
-
-@admin_router.delete("/users/{user_id}", status_code=200)
-def admin_delete_user(user_id: int, current_admin: str = Depends(get_current_admin)):
-    db_user = user_service.get_user(user_id)
-    if not db_user:
-        raise UserError.USER_NOT_FOUND
-    user_service.delete_user(user_id)
-    return {"message": "User deleted successfully"}
-
 # New endpoint for self update for normal users
 @router.put("/me", response_model=schemas.UserResponse)
 def update_me(user: schemas.UserUpdate, current_user: str = Depends(get_current_user_multi)):

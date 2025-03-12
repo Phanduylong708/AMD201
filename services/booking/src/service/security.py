@@ -4,7 +4,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 import os
 
-from services.booking.src.error import BookingError
+from src.error import BookingError
 
 # Configuration: SECRET_KEY should be set as an environment variable.
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key")

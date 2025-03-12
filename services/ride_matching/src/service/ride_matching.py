@@ -1,5 +1,6 @@
 import requests
 from fastapi import HTTPException
+import random
 
 # Rider Service Base URL (this service calls the Rider Service API)
 RIDER_SERVICE_URL = "http://localhost:8002/riders"
@@ -64,7 +65,11 @@ def find_nearest_rider(user_id: int) -> tuple[dict, float]:
     """
     Return the nearest available rider (the first element from the sorted list).
     """
-    sorted_riders = find_all_available_riders(user_id)
-    if not sorted_riders:
+    candidate_list = find_all_available_riders(user_id)
+    if not candidate_list:
         raise HTTPException(status_code=400, detail="No available riders found")
-    return sorted_riders[0]
+    # Determine the minimum distance among candidates
+    min_distance = candidate_list[0][1]
+    # Filter candidates with the same minimum distance
+    eligible_candidates = [ (r, d) for (r, d) in candidate_list if d == min_distance ]
+    return random.choice(eligible_candidates)

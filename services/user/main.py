@@ -32,7 +32,6 @@ app.add_middleware(
 
 app.include_router(user.router, tags=["User"])
 app.include_router(user.auth_router, tags=["Auth"])
-app.include_router(user.admin_router, prefix="/admin", tags=["Admin"])
 
 if __name__ == "__main__":
     print("🚀 Starting User Service...")

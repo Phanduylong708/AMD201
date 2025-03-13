@@ -20,12 +20,6 @@ rider_oauth2_scheme = OAuth2PasswordBearer(tokenUrl="gateway/login/rider")
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
-
-def get_password_hash(password):
-    return pwd_context.hash(password)
-
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     """Create a new JWT token."""
     to_encode = data.copy()
@@ -74,23 +68,3 @@ async def get_current_rider(token: str = Depends(rider_oauth2_scheme)):
         )
     return token_data
 
-def verify_admin_token(token: str):
-    """Verify if the token belongs to an admin user."""
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        role = payload.get("role")
-        if role != "admin":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Admin privileges required"
-            )
-        return payload
-    except JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials"
-        )
-
-async def get_current_admin(token: str = Depends(oauth2_scheme)):
-    """Get current admin from JWT token."""
-    return verify_admin_token(token)

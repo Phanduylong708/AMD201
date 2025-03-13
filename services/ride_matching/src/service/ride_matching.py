@@ -60,16 +60,3 @@ def find_all_available_riders(user_id: int) -> list[tuple[dict, float]]:
             detail=f"Failed to communicate with Rider Service: {str(e)}"
         )
 
-
-def find_nearest_rider(user_id: int) -> tuple[dict, float]:
-    """
-    Return the nearest available rider (the first element from the sorted list).
-    """
-    candidate_list = find_all_available_riders(user_id)
-    if not candidate_list:
-        raise HTTPException(status_code=400, detail="No available riders found")
-    # Determine the minimum distance among candidates
-    min_distance = candidate_list[0][1]
-    # Filter candidates with the same minimum distance
-    eligible_candidates = [ (r, d) for (r, d) in candidate_list if d == min_distance ]
-    return random.choice(eligible_candidates)

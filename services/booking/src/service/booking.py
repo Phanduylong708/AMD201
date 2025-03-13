@@ -33,28 +33,6 @@ def check_user_exists(user_id: int) -> bool:
         # If we can't reach the user service, assume user is not available
         return False
 
-def get_user_details(user_id: int) -> dict:
-    """
-    Retrieve user details through User Service API.
-    Note: Since the User service requires authentication, we'll use a workaround
-    by getting the user from the list of all users.
-    """
-    try:
-        # Get all users (this endpoint doesn't require authentication)
-        response = requests.get(f"{USER_SERVICE_URL}/")
-        if response.status_code != 200:
-            raise BookingError.booking_not_found("User not found")
-        
-        # Find the user in the list
-        users = response.json()
-        user = next((user for user in users if user["id"] == user_id), None)
-        
-        if not user:
-            raise BookingError.booking_not_found("User not found")
-            
-        return user
-    except requests.RequestException as e:
-        raise BookingError.user_service_error(f"Failed to communicate with User service: {str(e)}")
 
 def calculate_fare(distance_km: float) -> float:
     """Calculate fare based on a tiered pricing model."""
@@ -82,39 +60,6 @@ def validate_status_transition(current_status: str, new_status: str) -> bool:
     }
     
     return new_status in valid_transitions.get(current_status, [])
-
-
-def update_booking_status(booking_id: int, update_data: schemas.BookingUpdateStatus, db: Session = Depends(get_db)):
-    """API endpoint to update booking status."""
-    updated_booking = update_booking_status_db(db, booking_id, update_data.status)
-    return updated_booking
-
-
-def find_nearest_rider(user_id: int) -> tuple[int, float]:
-    """
-    Find the nearest available rider using Ride Matching Service.
-    Returns:
-        tuple: (rider_id, distance_km)
-    Raises:
-        HTTPException: If no riders available or service error
-    """
-    try:
-        match_response = requests.post(
-            f"{RIDE_MATCHING_URL}/match-rider",
-            json={"user_id": user_id}
-        )
-        
-        if match_response.status_code != 200:
-            raise HTTPException(status_code=400, detail="No available riders found")
-            
-        match_data = match_response.json()
-        return match_data["rider_id"], match_data["distance_km"]
-        
-    except requests.RequestException as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to communicate with Ride Matching Service: {str(e)}"
-        )
 
 
 def create_booking_with_rider(db: Session, booking_data: schemas.BookingCreate):

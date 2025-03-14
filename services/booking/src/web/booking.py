@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from src.service import booking as booking_service
 from src.model import booking as booking_schemas
 from src.data.init import get_db
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer, APIKeyHeader
 from src.service.security import get_current_booking
 import requests
 from src.error import BookingError
@@ -13,7 +13,7 @@ RIDER_SERVICE_URL = "http://localhost:8002/riders"
 RIDE_MATCHING_URL = "http://localhost:8003/ride-matching"
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/token")
+oauth2_scheme = APIKeyHeader(name="Authorization", auto_error=False, scheme_name="Bearer")
 
 
 router = APIRouter(prefix="/booking", tags=["booking"])

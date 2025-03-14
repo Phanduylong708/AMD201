@@ -30,9 +30,9 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 
 async def get_current_booking(token: str) -> str:
     if not token:
-        raise BookingError.UNAUTHORIZED_ACCESS
+        raise BookingError.unauthorized_access
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload.get("sub")
     except JWTError:
-        raise BookingError.UNAUTHORIZED_ACCESS
+        raise BookingError.unauthorized_access

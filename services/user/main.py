@@ -1,4 +1,3 @@
-# Added code to load environment variables from Coursework/.env
 from dotenv import load_dotenv
 from pathlib import Path
 

@@ -63,81 +63,45 @@ def validate_status_transition(current_status: str, new_status: str) -> bool:
 
 
 def create_booking_with_rider(db: Session, booking_data: schemas.BookingCreate):
-    """
-    Create a new booking with automatic rider assignment.
-    Steps:
-      1. Verify the user exists
-      2. Check if the user already has an active booking.
-      3. Retrieve a sorted list of candidate riders from the Ride Matching Service.
-      4. Iterate over the list to find a rider without an active booking.
-      5. If no free rider is found, raise an error.
-      6. Otherwise, set booking details, create the booking record,
-         and update the rider's status.
-    """
+
     # Step 1: Verify the user exists through User Service
     if not check_user_exists(booking_data.user_id):
         raise BookingError.booking_not_found("User not found or unavailable")
     
-    # Step 2: Check if the user already has an active booking.
+    # Step 2: Check if the user already has an active booking
     active_booking = db.query(models.Booking).filter(
         models.Booking.user_id == booking_data.user_id,
         models.Booking.status.in_(["Pending", "In Progress"])
     ).first()
     if active_booking:
         raise BookingError.active_booking_exists("User already has an active booking. Please wait for acceptance booking!")
-    
-    # Step 3: Retrieve sorted available riders from the Ride Matching Service.
-    try:
-        response = requests.post(
-            f"{RIDE_MATCHING_URL}/match-rider-list",
-            json={"user_id": booking_data.user_id}
-        )
-        if response.status_code != 200:
-            raise BookingError.rider_not_available("No available riders found")
-        candidate_list = response.json()  # List of dicts: [{"rider_id": x, "distance_km": y}, ...]
-    except requests.RequestException as e:
-        raise BookingError.ride_matching_service_error(f"Failed to communicate with Ride Matching Service: {str(e)}")
 
-    selected_rider_id = None
-    selected_distance = None
-
-    # Step 4: Iterate over candidate riders to find one without an active booking.
-    for candidate in candidate_list:
-        rider_id = candidate.get("rider_id")
-        distance_km = candidate.get("distance_km")
+    # Step 3: Check if the rider is already assigned to another booking
+    if booking_data.rider_id:
         existing_booking = db.query(models.Booking).filter(
-            models.Booking.rider_id == rider_id,
+            models.Booking.rider_id == booking_data.rider_id,
             models.Booking.status.in_(["Pending", "In Progress"])
         ).first()
-        if not existing_booking:
-            selected_rider_id = rider_id
-            selected_distance = distance_km
-            break
+        if existing_booking:
+            raise BookingError.rider_not_available("Selected rider is already assigned to another booking")
 
-    # Step 5: If no free rider is found, raise an error.
-    if selected_rider_id is None:
-        raise HTTPException(status_code=400, detail="No available riders can be assigned at the moment.")
-
-    # Step 6: Set booking details.
-    booking_data.rider_id = selected_rider_id
-    booking_data.distance_km = selected_distance
+    # Step 4: Calculate fare and create booking
+    if not booking_data.distance_km:
+        raise BookingError.invalid_booking_data("Distance must be provided")
+    
     booking_data.status = "Pending"
-    booking_data.fare = calculate_fare(selected_distance)
+    booking_data.fare = calculate_fare(booking_data.distance_km)
 
-    # Create the booking record.
+    # Create the booking record
     new_booking = create_booking(db, booking_data)
 
-    # Update the rider's status via Rider Service.
-    update_rider_status(selected_rider_id, is_available=False, in_riding=True)
+    # Update the rider's status via Rider Service
+    update_rider_status(booking_data.rider_id, is_available=False, in_riding=True)
 
     return new_booking
 
-
 def update_rider_status(rider_id: int, is_available: bool, in_riding: bool) -> None:
-    """
-    Update rider status through Rider Service.
-    Raises HTTPException if update fails.
-    """
+
     try:
         response = requests.patch(
             f"{RIDER_SERVICE_URL}/{rider_id}/status",
